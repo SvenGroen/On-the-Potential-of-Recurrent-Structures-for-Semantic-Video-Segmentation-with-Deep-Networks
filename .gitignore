@@ -1,5 +1,5 @@
 /.idea
 **/__pycache__
 /**/_pycache__
-/dataset/data/
-/models/trained_models/
+src/dataset/data/*
+src/models/trained_models/*
