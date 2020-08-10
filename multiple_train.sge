@@ -1,0 +1,41 @@
+#!/bin/bash
+#$ -l mem=4G
+#$ -cwd
+#$ -l cuda=0
+#$ -pe default 1
+#$ -l hostname=*cippy18*
+#$ -l h_rt=00:40:00
+#$ -N job_starter
+#$ -o /dev/null"
+#$ -e /dev/null"
+
+
+echo " Start of SGE job " 
+echo "$date"
+# Identify Job-ID
+echo ""
+echo "Hostname"
+echo "$HOSTNAME"
+echo 'Job-ID:'
+echo $JOB_ID
+echo 'user:'
+echo $USER
+echo ""
+echo "Start"
+echo ""
+
+setup_file=src/train_multiple.py
+env_name=torch
+#Scratch_wd_21 is a variable that stores the path to my scratch folder in which i installed anaconda
+export SCRATCH_WD_21="/net/projects/scratch/summer/valid_until_31_January_2021/sgroen"
+# create the pythonpath variable based on the location of where my anaconda is installed
+export PYTHONPATH=$SCRATCH_WD_21:$PYTHONPATH
+# activate my environment
+source $SCRATCH_WD_21/miniconda/bin/activate $env_name
+
+echo "RUNNING: " $setup_file
+echo "Current Environemt: " $env_name
+
+
+python $setup_file
+

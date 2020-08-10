@@ -1,0 +1,5 @@
+/.idea
+**/__pycache__
+/**/_pycache__
+/dataset/data/
+/models/trained_models/

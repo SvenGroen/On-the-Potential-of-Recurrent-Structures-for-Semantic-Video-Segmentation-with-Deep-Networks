@@ -1,0 +1,1 @@
+https://github.com/cmpark0126/pytorch-polynomial-lr-decay
