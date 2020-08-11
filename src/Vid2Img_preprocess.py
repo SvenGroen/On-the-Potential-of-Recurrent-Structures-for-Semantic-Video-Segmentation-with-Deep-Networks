@@ -6,7 +6,7 @@ from collections import defaultdict
 from pathlib import Path
 import sys
 
-sys.stderr.write("Start of file")
+sys.stderr.write("Start of file\n")
 
 
 def add_noise(image):
