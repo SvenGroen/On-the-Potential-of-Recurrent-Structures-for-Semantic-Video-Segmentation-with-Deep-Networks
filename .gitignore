@@ -1,5 +1,6 @@
 /.idea
-**/__pycache__
-/**/_pycache__
+src/**/__pycache__/
 src/dataset/data/*
 src/models/trained_models/*
+src/job_starter.*
+src/log_*

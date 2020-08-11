@@ -21,6 +21,7 @@ class GridTrainer:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.config = config
         self.model, self.lr_boundarys = initiator.initiate_model(self.config)
+        self.model = self.model.to(self.device)
         self.criterion = initiator.initiate_criterion(self.config)
         self.logger = initiator.initiate_logger(self.lr_boundarys[0])
         self.metric_logger = defaultdict(list)
@@ -32,6 +33,7 @@ class GridTrainer:
         self.optimizer = optim.Adam(self.model.parameters(),
                                     lr=self.lr_boundarys[0],
                                     weight_decay=self.config["weight_decay"])
+
         self.scheduler = optim.lr_scheduler.CyclicLR(self.optimizer,
                                                      base_lr=self.lr_boundarys[0], max_lr=self.lr_boundarys[1],
                                                      cycle_momentum=False,
@@ -88,7 +90,10 @@ class GridTrainer:
         if "gruV4" in self.config["model"]:
             VRAM = "11G"
         recallParameter = 'qsub -N ' + "id" + str(self.config["track_ID"]) + "e" + str(self.logger["epochs"][-1]) \
-                          + self.config["model"] + ' -l nv_mem_free=' + VRAM + ' -v CFG=' \
+                          + self.config["model"] + ' -l nv_mem_free=' + VRAM + \
+                          + " -o " + self.config["save_files_path"] + "/log_files/$JOB_NAME.o$JOB_ID -j y" + " -e " \
+                          + self.config["save_files_path"] + "/log_files/$JOB_NAME.o$JOB_ID -j y" \
+                          + ' -v CFG=' \
                           + self.config["save_files_path"] + "/train_config.json" + ' train.sge'
         if self.device == "cuda":
             call(recallParameter, shell=True)
@@ -140,11 +145,11 @@ class GridTrainer:
                 loss = self.criterion(pred, labels)
 
                 self.optimizer.zero_grad()
-                # loss.backward()
+                loss.backward()
                 self.optimizer.step()
                 self.scheduler.step()
                 self.logger["running_loss"] += loss.item() * images.size(0)
-                break
+
 
             self.logger["lrs"].append(self.optimizer.state_dict()["param_groups"][0]["lr"])
             self.logger["loss"].append(self.logger["running_loss"] / len(self.dataset))

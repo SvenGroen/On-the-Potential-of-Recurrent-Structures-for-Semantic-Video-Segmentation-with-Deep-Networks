@@ -1,0 +1,47 @@
+#!/bin/bash
+#$ -l mem=8G
+#$ -cwd
+#$ -l cuda=2
+#$ -l nv_mem_free=3.8G
+#$ -pe default 4
+#$ -l hostname=*voxel*
+#$ -N log_prep 
+#$ -l cuda=1
+
+
+
+echo " Start of SGE job "
+echo "$date"
+# Identify Job-ID
+echo ""
+echo "Hostname"
+echo "$HOSTNAME"
+echo 'Job-ID:'
+echo $JOB_ID
+echo 'user:'
+echo $USER
+echo ""
+echo "Start"
+echo ""
+
+cd ..
+
+setup_file=src/Vid2Img_preprocess.py
+env_name=torch
+
+#Scratch_wd_21 is a variable that stores the path to my scratch folder in which i installed anaconda
+export SCRATCH_WD_21="/net/projects/scratch/summer/valid_until_31_January_2021/sgroen"
+# create the pythonpath variable based on the location of where my anaconda is installed
+export PYTHONPATH=$SCRATCH_WD_21:$PYTHONPATH
+# activate my environment
+source $SCRATCH_WD_21/miniconda/bin/activate $env_name
+
+echo "RUNNING: " $setup_file
+echo "Current Environemt: " $env_name
+
+
+
+python $setup_file
+
+
+

@@ -8,6 +8,7 @@ import json
 from torch.utils import data
 import numpy as np
 
+
 def vstack(images):
     if len(images) == 0:
         raise ValueError("Need 0 or more images")
@@ -45,10 +46,14 @@ def hstack(images):
 class YT_Greenscreen(data.Dataset):
 
     def __init__(self, train=True, start_index=torch.tensor([0]), batch_size=1):
+        import os
+        import sys
+        sys.stderr.write("\nin dataset: " + os.getcwd() + "\n")
+        print("in dataset: ", os.getcwd())
 
         self.train = train
         self.mode = "train" if train else "test"
-        with open("data/images/YT_4sec/" + self.mode + "/out_log.json", "r") as json_file:
+        with open("src/dataset/data/images/YT_4sec/" + self.mode + "/out_log.json", "r") as json_file:
             self.data = json.load(json_file)
         self.start_index = start_index if isinstance(start_index, int) else start_index[0].item()
         self.seed = random.randint(-999, 999)  # makes sure the transformations are applied equally
@@ -56,12 +61,12 @@ class YT_Greenscreen(data.Dataset):
         self.batch_size = batch_size
         self.cur_idx = self.start_index
 
-
     def __len__(self):
         length = len(self.data["inputs"])
         rest = length % self.batch_size
 
         return length - rest
+
     def set_start_index(self, idx):
         if isinstance(idx, int):
             self.start_index = idx

@@ -1,5 +1,9 @@
 import argparse
 import json
+import sys
+import os
+print(os.getcwd())
+sys.stderr.write("\n"+os.getcwd()+"\n")
 
 from src.gridtrainer import GridTrainer
 
@@ -9,8 +13,9 @@ parser.add_argument("-cfg", "--config",
                          " num_epochs, scheduler_step_size, save_freq, save_path", type=str)
 args = parser.parse_args()
 if args.config is not None:
+    print("Loading config: ", args.config)
     with open(args.config) as js:
-        print("Loading config: ", args.config)
+        # print("Loading config: ", args.config)
         config = json.load(js)
 
 trainer = GridTrainer(config)
