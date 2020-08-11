@@ -14,7 +14,7 @@ def add_noise(image):
     mean = 0
     # var = 0.1
     # sigma = var**0.5
-    gauss = np.random.normal(mean, 1.5, (row, col, ch))
+    gauss = np.random.normal(mean, 1, (row, col, ch))
     gauss = gauss.reshape(row, col, ch)
     noisy = image + gauss
     return noisy
@@ -22,15 +22,15 @@ def add_noise(image):
 
 random.seed(42)
 for split in ["train", "test"]:
-    vid_path_inp = Path("dataset/data/videos/YT_4sec") / split / "input"
+    vid_path_inp = Path("src/dataset/data/videos/YT_4sec") / split / "input"
     video_names = [vid.stem for vid in vid_path_inp.glob("*")]
     random.shuffle(video_names)
     output_size = (int(2048 / 4), int(1080 / 4))
     lower_green = np.array([0, 125, 0])
     upper_green = np.array([100, 255, 120])
     MAX_DURATION = 4
-    out_path = Path("data/images/YT_4sec") / split
-    bgpath = Path("dataset/data/images/backgrounds") / split
+    out_path = Path("src/dataset/data/images/YT_4sec") / split
+    bgpath = Path("src/dataset/data/images/backgrounds") / split
     label_out_path = out_path / "labels"
     input_out_path = out_path / "input"
     label_out_path.mkdir(parents=True, exist_ok=True)
@@ -44,7 +44,7 @@ for split in ["train", "test"]:
         bgimg = str(bgimg[i % len(bgimg)])
         bgimg = cv2.imread(bgimg)
         bgimg = cv2.resize(bgimg, output_size)
-        # bgimg = np.clip(add_noise(bgimg), a_min=0, a_max=255)
+        bgimg = np.clip(add_noise(bgimg), a_min=0, a_max=255)
         start = True
         print("--------------------------------")
         print("video: ", vid)
@@ -70,5 +70,5 @@ for split in ["train", "test"]:
                 break
         cap_inp.release()
 
-    with open(str("dataset" / out_path / "out_log.json"), "w") as js:
+    with open(str(out_path / "out_log.json"), "w") as js:
         json.dump(dict(out_log), js)
