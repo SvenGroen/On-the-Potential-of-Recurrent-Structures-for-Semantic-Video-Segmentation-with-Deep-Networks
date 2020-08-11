@@ -1,0 +1,1 @@
+{"save_folder_path": "models/trained_models/testing", "save_files_path": "models/trained_models/testing/Deep+_mobile_wd1e-08bs6num_ep2ev2ID0", "model": "Deep+_mobile", "weight_decay": 1e-08, "batch_size": 6, "num_epochs": 2, "evaluation_steps": 2, "loss": "CrossDice", "track_ID": 0}

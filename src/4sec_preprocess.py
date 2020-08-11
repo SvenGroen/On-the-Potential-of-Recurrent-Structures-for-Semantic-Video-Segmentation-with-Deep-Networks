@@ -29,7 +29,7 @@ splits = ["train", "test"]
 
 fourcc = cv2.VideoWriter_fourcc(*"mp4v")
 for split in ["train", "test"]:
-    vid_path = Path("dataset/data/videos/YT_originals_sorted") / split
+    vid_path = Path("./dataset/data/videos/YT_originals_sorted") / split
     video_names = [vid.stem for vid in vid_path.glob("*")]
 
     out_path = Path("dataset/data/videos/YT_4sec") / split
