@@ -38,7 +38,7 @@ class GridTrainer:
                                                      base_lr=self.lr_boundarys[0], max_lr=self.lr_boundarys[1],
                                                      cycle_momentum=False,
                                                      mode="triangular2",
-                                                     step_size_up=1)  # 6 * len(self.loader)
+                                                     step_size_up=6 * len(self.loader))  # 6 * len(self.loader)
         self._RESTART = False
         self.load_after_restart()
 
@@ -74,6 +74,7 @@ class GridTrainer:
         self.logger["state_dict"] = self.model.state_dict()
         self.logger["optim_state_dict"] = self.optimizer.state_dict()
         self.logger["batch_index"] = self.dataset.cur_idx
+        self.logger["scheduler"] = self.scheduler.state_dict()
         torch.save(self.logger, self.config["save_files_path"] + "/checkpoint.pth.tar")
 
     def save_metric_logger(self):
@@ -86,15 +87,15 @@ class GridTrainer:
                                                                                               self.logger["epochs"][-1],
                                                                                               self.logger[
                                                                                                   "batch_index"]))
+        job_name = "id" + str(config["track_ID"]).zfill(2) + config["model"]
         VRAM = "9G"
         if "gruV4" in self.config["model"]:
             VRAM = "11G"
-        recallParameter = 'qsub -N ' + "id" + str(self.config["track_ID"]) + "e" + str(self.logger["epochs"][-1]) \
-                          + self.config["model"] + ' -l nv_mem_free=' + VRAM + \
-                          + " -o " + self.config["save_files_path"] + "/log_files/$JOB_NAME.o$JOB_ID -j y" + " -e " \
-                          + self.config["save_files_path"] + "/log_files/$JOB_NAME.o$JOB_ID -j y" \
-                          + ' -v CFG=' \
-                          + self.config["save_files_path"] + "/train_config.json" + ' train.sge'
+        recallParameter = 'qsub -N ' + "id" + str(self.config["track_ID"]) + "e" + str(self.logger["epochs"][-1]) + \
+                          str(self.config["model"]) + ' -l nv_mem_free=' + VRAM + " -o " \
+                          + str(self.config["save_files_path"]) + "/log_files/" + job_name + ".o$JOB_ID" + " -e " \
+                          + str(self.config["save_files_path"]) + "/log_files/" + job_name + ".e$JOB_ID" + ' -v CFG=' \
+                          + str(self.config["save_files_path"]) + "/train_config.json" + ' train.sge'
         if self.device == "cuda":
             call(recallParameter, shell=True)
         else:
@@ -123,6 +124,7 @@ class GridTrainer:
 
     def train(self):
         for epoch in tqdm(range(self.logger["epochs"][-1], self.config["num_epochs"])):
+
             self.logger["running_loss"] = self.get_running_loss()
             for i, batch in enumerate(self.loader):
                 if self.time_logger.check_for_restart():
@@ -131,6 +133,8 @@ class GridTrainer:
                     pass  # End the script
 
                 idx, video_start, (images, labels) = batch
+                sys.stderr.write(f"\nCurrent Index: {idx}\n")
+                sys.stderr.write(f"\ntorch version: {torch.__version__}\n")
                 images, labels = (images.to(self.device), labels.to(self.device))
                 if torch.any(video_start):
                     self.model.reset()
@@ -149,7 +153,6 @@ class GridTrainer:
                 self.optimizer.step()
                 self.scheduler.step()
                 self.logger["running_loss"] += loss.item() * images.size(0)
-
 
             self.logger["lrs"].append(self.optimizer.state_dict()["param_groups"][0]["lr"])
             self.logger["loss"].append(self.logger["running_loss"] / len(self.dataset))

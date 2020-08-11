@@ -105,7 +105,7 @@ def initiate_model(config):
         net = None
         lower_lr_bound = None
         upper_lr_bound = None
-
+    net.train()
     for param in net.base.backbone.parameters():
         param.requires_grad = False
 

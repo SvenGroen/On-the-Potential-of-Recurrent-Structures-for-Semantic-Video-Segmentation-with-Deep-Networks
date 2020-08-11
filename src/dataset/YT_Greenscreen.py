@@ -65,7 +65,7 @@ class YT_Greenscreen(data.Dataset):
         length = len(self.data["inputs"])
         rest = length % self.batch_size
 
-        return length - rest
+        return length - rest - 1
 
     def set_start_index(self, idx):
         if isinstance(idx, int):

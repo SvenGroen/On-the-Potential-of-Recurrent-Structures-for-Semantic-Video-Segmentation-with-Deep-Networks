@@ -49,6 +49,7 @@ for i, config in enumerate(configs):
     unique_name = config["model"] + "_wd" + format(config["weight_decay"], ".0e") + "bs" + str(
         config["batch_size"]) + "num_ep" \
                   + str(config["num_epochs"]) + "ev" + str(config["evaluation_steps"]) + "ID" + str(config["track_ID"])
+    config["unique_name"] = unique_name
     config["save_files_path"] = Path(config["save_folder_path"]) / unique_name
 
     config["save_files_path"].mkdir(parents=True, exist_ok=True)  # create folder to save results
