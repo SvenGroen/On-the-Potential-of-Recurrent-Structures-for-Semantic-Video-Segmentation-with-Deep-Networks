@@ -23,6 +23,7 @@ if args.config is not None:
 
 trainer = GridTrainer(config)
 trainer.train()
+sys.stderr.write("\nEND OF TRAIN FILE\n")
 
 '''
 else:

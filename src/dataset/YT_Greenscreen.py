@@ -60,12 +60,14 @@ class YT_Greenscreen(data.Dataset):
         self.transform = Segmentation_transform(seed=self.seed)
         self.batch_size = batch_size
         self.cur_idx = self.start_index
+        self.zeros_inp = None
+        self.zeros_lbl = None
 
     def __len__(self):
         length = len(self.data["inputs"])
         rest = length % self.batch_size
 
-        return length - rest - 1
+        return length - rest
 
     def set_start_index(self, idx):
         if isinstance(idx, int):
@@ -76,7 +78,7 @@ class YT_Greenscreen(data.Dataset):
     def __getitem__(self, idx):
         idx = idx + self.start_index
         if idx >= self.__len__():
-            return 0, False, (0, 0)
+            return 0, False, (self.zeros_inp, self.zeros_lbl)
         video_start = bool(int(self.data["inputs"][idx][1]))
         if video_start:
             self.transform = Segmentation_transform(seed=random.randint(-999, 999))
@@ -89,6 +91,9 @@ class YT_Greenscreen(data.Dataset):
         random.seed(self.seed)
         lbl = (self.transform(lbl, label=True)).squeeze(0)
         self.cur_idx = idx
+        if self.zeros_inp is None or self.zeros_lbl is None:
+            self.zeros_inp = torch.zeros_like(inp)
+            self.zeros_lbl = torch.zeros_like(lbl).long()
         return idx, video_start, (inp, lbl.round().long())
 
     def show(self, num_images, start_idx: int = 0, random_images=False):
