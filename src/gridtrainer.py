@@ -160,12 +160,12 @@ class GridTrainer:
                 loss = self.criterion(pred, labels)
 
                 self.optimizer.zero_grad()
-                # loss.backward()  # <--------------------------------------------------------------------------------
+                loss.backward()  # <--------------------------------------------------------------------------------
                 self.optimizer.step()
                 self.scheduler.step()
                 self.logger["running_loss"] += loss.item() * images.size(0)
                 print("Loss: {}, running_loss: {}".format(loss, self.logger["running_loss"]))
-                break
+
 
             self.logger["loss"].append(self.logger["running_loss"] / len(self.dataset))
             visualize_logger(self.logger, self.config["save_files_path"])

@@ -143,8 +143,6 @@ class Deeplabv3Plus_lstmV3(nn.Module):
             self.base = deeplabv3plus_resnet50(num_classes=2, pretrained_backbone=True)
             in_channels = 2048
             low_level_channels = 256
-
-        self.backbone = self.base.backbone
         self.classifier = DeepLabHeadV3PlusLSTM(in_channels, low_level_channels, 2, [12, 24, 36])
         self.tmp_hidden = None
 
@@ -177,8 +175,6 @@ class Deeplabv3Plus_lstmV4(nn.Module):
             self.base = deeplabv3plus_resnet50(num_classes=2, pretrained_backbone=True)
             in_channels = 2048
             low_level_channels = 256
-
-        self.backbone = self.base.backbone
         self.classifier = DeepLabHeadV3PlusLSTM(in_channels, low_level_channels, 2, [12, 24, 36], store_previous=True)
 
         self.tmp_hidden = None
@@ -369,7 +365,6 @@ class Deeplabv3Plus_gruV3(nn.Module):
             in_channels = 2048
             low_level_channels = 256
 
-        self.backbone = self.base.backbone
         self.classifier = DeepLabHeadV3PlusGRU(in_channels, low_level_channels, 2, [12, 24, 36],
                                                store_previous=False).to(device)
         self.hidden = self.classifier.hidden
@@ -395,7 +390,7 @@ class Deeplabv3Plus_gruV3(nn.Module):
 
     def forward(self, x, *args):
         input_shape = x.shape[-2:]
-        features = self.backbone(x)
+        features = self.base.backbone(x)
         out = self.classifier(features)
         out = F.interpolate(out, size=input_shape, mode='bilinear', align_corners=False)
         return out
@@ -413,7 +408,6 @@ class Deeplabv3Plus_gruV4(nn.Module):
             in_channels = 2048
             low_level_channels = 256
 
-        self.backbone = self.base.backbone
         self.classifier = DeepLabHeadV3PlusGRU(in_channels, low_level_channels, 2, [12, 24, 36],
                                                store_previous=True).to(device)
         self.hidden = self.classifier.hidden
@@ -439,7 +433,7 @@ class Deeplabv3Plus_gruV4(nn.Module):
 
     def forward(self, x, *args):
         input_shape = x.shape[-2:]
-        features = self.backbone(x)
+        features = self.base.backbone(x)
         out = self.classifier(features)
         out = F.interpolate(out, size=input_shape, mode='bilinear', align_corners=False)
         return out

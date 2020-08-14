@@ -30,11 +30,11 @@ MAX_DURATION = 4
 splits = ["train", "test"]
 
 fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-for split in ["train", "test"]:
-    vid_path = Path("./dataset/data/videos/YT_originals") / split
+for split in splits:
+    vid_path = Path("src/dataset/data/videos/YT_originals") / split
     video_names = [vid.stem for vid in vid_path.glob("*")]
 
-    out_path = Path("dataset/data/videos/YT_4sec") / split
+    out_path = Path("src/dataset/data/videos/YT_4sec") / split
     input_out_path = out_path / "input"
     input_out_path.mkdir(parents=True, exist_ok=True)
     i = 0
