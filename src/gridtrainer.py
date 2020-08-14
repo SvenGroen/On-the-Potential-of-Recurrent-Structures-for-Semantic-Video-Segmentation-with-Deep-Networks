@@ -108,14 +108,14 @@ class GridTrainer:
         from subprocess import call
         job_name = "IE" + str(self.config["track_ID"]).zfill(2) + "e" + str(self.logger["epochs"][-1])
         VRAM = 3.8
-        recallParameter = "qsub -N " + job_name \
-                          + self.config["model"] + ' -l nv_mem_free=' + str(VRAM) \
+        recallParameter = "qsub -N " + job_name + self.config["model"] + ' -l nv_mem_free=' + str(VRAM) \
                           + " -o " + str(self.config["save_files_path"]) + "/log_files/IE" + job_name + ".o$JOB_ID" \
                           + " -e " + str(self.config["save_files_path"]) + "/log_files/IE" + job_name + ".e$JOB_ID" \
                           + " -v STPS=" + str(num_eval_steps) \
-                          + " RDM=" + str(int(random_start)) \
-                          + " FNL=" + str(int(final)) \
-                          + " PTH=" + str(self.config["save_files_path"]) + " src/eval_model.sge"
+                          + " -v RDM=" + str(int(random_start)) \
+                          + " -v FNL=" + str(int(final)) \
+                          + " -v PTH=" + str(self.config["save_files_path"]) + " src/eval_model.sge"
+
         if torch.cuda.is_available():
             sys.stderr.write(f"\nRecall Parameter:\n{recallParameter}")
             call(recallParameter, shell=True)
@@ -131,7 +131,7 @@ class GridTrainer:
 
     def train(self):
         for epoch in tqdm(range(self.logger["epochs"][-1], self.config["num_epochs"])):
-            sys.stderr.write(f"\n---NEW EPOCH---\nlen(dataset): {len(self.dataset)}\tepoch : {epoch}\n")
+            sys.stderr.write(f"\n---NEW EPOCH---\nlen(dataset): {len(self.dataset)}\tepoch : {epoch}\n") 
             self.logger["running_loss"] = self.get_running_loss()
             for i, batch in enumerate(self.loader):
                 if self.time_logger.check_for_restart():
@@ -160,7 +160,8 @@ class GridTrainer:
                 self.scheduler.step()
                 self.logger["running_loss"] += loss.item() * images.size(0)
 
-            sys.stderr.write("\n Appending Loss and LR:\nEpoch: {}, idx: {}".format(self.logger["epochs"][-1], idx))
+            sys.stderr.write("\n---BATCH END---\nAppending Loss and LR:\nEpoch: {},\t lrs: {}\t Loss: {}\n".format(
+                self.logger["epochs"], self.logger["lrs"], self.logger["loss"]))
             self.logger["lrs"].append(self.optimizer.state_dict()["param_groups"][0]["lr"])
             self.logger["loss"].append(self.logger["running_loss"] / len(self.dataset))
 
