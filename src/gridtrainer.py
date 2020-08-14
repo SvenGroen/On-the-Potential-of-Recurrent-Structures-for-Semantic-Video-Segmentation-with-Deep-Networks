@@ -23,7 +23,8 @@ class GridTrainer:
         self.model, self.lr_boundarys = initiator.initiate_model(self.config)
         self.model = self.model.to(self.device)
         self.criterion = initiator.initiate_criterion(self.config)
-        self.logger = initiator.initiate_logger(self.lr_boundarys[0])
+        # self.logger = initiator.initiate_logger(self.lr_boundarys[0])
+        self.logger = defaultdict(list)
         self.metric_logger = defaultdict(list)
         self.time_logger = time_logger.TimeLogger(restart_time=60 * 60 * 1.2)  # 60 * 60 * 1.2
         self.dataset = YT_Greenscreen(train=train, start_index=0,
@@ -122,20 +123,24 @@ class GridTrainer:
         else:
             print("Script would have been called:\n" + recallParameter)
 
-    def get_running_loss(self):
+    def get_starting_parameters(self, what=""):
         if not self._RESTART:
             return 0
         else:
-            self._RESTART = False
-            return self.logger["running_loss"]
+            if what == "running_loss":
+                return self.logger["running_loss"]
+            elif what == "epoch":
+                return self.logger["epochs"][-1]
 
     def train(self):
-        for epoch in tqdm(range(self.logger["epochs"][-1], self.config["num_epochs"])):
-            sys.stderr.write(f"\n---NEW EPOCH---\nlen(dataset): {len(self.dataset)}\tepoch : {epoch}\n") 
-            self.logger["running_loss"] = self.get_running_loss()
+        for epoch in tqdm(range(self.get_starting_parameters(what="epoch"), self.config["num_epochs"])):
+            if not self._RESTART:
+                self.logger["epochs"].append(epoch)
+                self.logger["lrs"].append(self.optimizer.state_dict()["param_groups"][0]["lr"])
+            self.logger["running_loss"] = self.get_starting_parameters(what="running_loss")
+            self._RESTART = False
             for i, batch in enumerate(self.loader):
                 if self.time_logger.check_for_restart():
-                    self.save_checkpoint()
                     self.restart_script()
                     return  # End the script
 
@@ -155,27 +160,23 @@ class GridTrainer:
                 loss = self.criterion(pred, labels)
 
                 self.optimizer.zero_grad()
-                loss.backward()  # <--------------------------------------------------------------------------------
+                # loss.backward()  # <--------------------------------------------------------------------------------
                 self.optimizer.step()
                 self.scheduler.step()
                 self.logger["running_loss"] += loss.item() * images.size(0)
+                print("Loss: {}, running_loss: {}".format(loss, self.logger["running_loss"]))
+                break
 
-            sys.stderr.write("\n---BATCH END---\nAppending Loss and LR:\nEpoch: {},\t lrs: {}\t Loss: {}\n".format(
-                self.logger["epochs"], self.logger["lrs"], self.logger["loss"]))
-            self.logger["lrs"].append(self.optimizer.state_dict()["param_groups"][0]["lr"])
             self.logger["loss"].append(self.logger["running_loss"] / len(self.dataset))
-
-            if epoch != 0 and self.logger["epochs"][-1] != epoch:
-                sys.stderr.write("\n Appending epoch: {} with [epochs]: {}".format(epoch, self.logger["epochs"]))
-                self.logger["epochs"].append(epoch)
             visualize_logger(self.logger, self.config["save_files_path"])
             self.save_checkpoint()
             if epoch == self.config["num_epochs"] - 1:
                 print("final")
-                self.intermediate_eval(num_eval_steps=29 * 6, random_start=True, final=True)
+                self.intermediate_eval(random_start=False, final=True)
             elif epoch % self.config["evaluation_steps"] == 0:
                 print("intermediate")
                 self.intermediate_eval(num_eval_steps=29 * 6, random_start=True, final=False)
+
 
     def eval(self, random_start=True, eval_length=29 * 4, save_file_path=None):
         self.load_after_restart()  # load the most recent log data
@@ -252,13 +253,13 @@ if __name__ == "__main__":
     weight_decay = 1e-8
     batch_size = 6
     track_id = 00
-    num_epochs = 2
+    num_epochs = 10
     eval_steps = 2
     unique_name = model + "_wd" + format(weight_decay, ".0e") + "bs" + str(batch_size) + "num_ep" \
                   + str(num_epochs) + "ev" + str(eval_steps) + "ID" + str(track_id)
     config = {
-        "save_folder_path": "models/trained_models/testing",
-        "save_files_path": "models/trained_models/testing/" + unique_name,
+        "save_folder_path": "src/models/trained_models/testing2",
+        "save_files_path": "src/models/trained_models/testing2/" + unique_name,
         "model": model,
         "weight_decay": weight_decay,
         "batch_size": batch_size,
