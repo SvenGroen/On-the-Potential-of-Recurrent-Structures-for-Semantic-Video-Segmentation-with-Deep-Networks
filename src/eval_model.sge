@@ -1,5 +1,5 @@
 #!/bin/bash
-#$ -l mem=4G
+#$ -l mem=4g
 #$ -cwd
 #$ -l cuda=1
 #$ -pe default 1
@@ -37,4 +37,5 @@ echo "Current Environemt: " $env_name
 
 
 python $setup_file -stps $STPS -rdm $RDM -fnl $FNL -pth $PTH
+
 
