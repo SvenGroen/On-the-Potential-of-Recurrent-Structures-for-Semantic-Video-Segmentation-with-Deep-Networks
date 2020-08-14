@@ -1,44 +1,46 @@
+import argparse
 import json
-from pathlib import Path
-
+import torch
 from torch import optim
 from torch_lr_finder import LRFinder
 from torch.utils.data import DataLoader
 from src.dataset.YT_Greenscreen import YT_Greenscreen
 from src.gridtrainer import GridTrainer
+import matplotlib.pyplot as plt
 
-model = "Deep+_mobile"
-weight_decay = 1e-8
-batch_size = 6
-track_id = 00
-num_epochs = 2
-eval_steps = 2
-unique_name = model + "_wd" + format(weight_decay, ".0e") + "bs" + str(batch_size) + "num_ep" \
-              + str(num_epochs) + "ev" + str(eval_steps) + "ID" + str(track_id)
-config = {
-    "save_folder_path": "models/trained_models/testing",
-    "save_files_path": "models/trained_models/testing/" + unique_name,
-    "model": model,
-    "weight_decay": weight_decay,
-    "batch_size": batch_size,
-    "num_epochs": num_epochs,
-    "evaluation_steps": eval_steps,
-    "loss": "CrossDice",
-    "track_ID": track_id
-}
-Path(config["save_files_path"]).mkdir(parents=True, exist_ok=True)
-with open(str(Path(config["save_files_path"]) / "train_config.json"), "w") as js:  # save learn config
-    json.dump(config, js)
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+parser = argparse.ArgumentParser()
 
-trainer = GridTrainer(config)
+parser.add_argument("-cfg", "--config",
+                    help="Config location", type=str)
+args = parser.parse_args()
 
-model = trainer.model
-criterion = trainer.criterion
-val_dataset = YT_Greenscreen(train=False, start_index=0, batch_size=trainer.config["batch_size"])
-val_loader = DataLoader(val_dataset, val_dataset.batch_size, shuffle=False)
-optimizer = optim.Adam(model.parameters(), lr=1e-8, weight_decay=0)
-optimizer.state_dict()["param_groups"][0]["lr"] = 1e-7
-lr_finder = LRFinder(model, optimizer, criterion, device="cpu")
-lr_finder.range_test(trainer.loader,val_loader=val_loader, end_lr=1e-1, num_iter=10)
-lr_finder.plot(skip_start=0, skip_end=0)
-lr_finder.reset()
+with open(args.cfg) as js:
+    print("Loading config: ", args.path)
+    config = json.load(js)
+
+historys = []
+weight_decays = [0, 1e-2, 1e-4, 1e-6]
+for wd in weight_decays:
+    trainer = GridTrainer(config, load_from_checkpoint=False)
+    model = trainer.model
+    criterion = trainer.criterion
+    val_dataset = YT_Greenscreen(train=False, start_index=0, batch_size=trainer.config["batch_size"])
+    val_loader = DataLoader(val_dataset, val_dataset.batch_size, shuffle=False)
+    optimizer = optim.Adam(model.parameters(), lr=1e-7, weight_decay=wd)
+    lr_finder = LRFinder(model, optimizer, criterion, device="cpu")
+    lr_finder.range_test(trainer.loader, end_lr=10, num_iter=config["num_epochs"])  # , val_loader=val_loader
+    historys.append(lr_finder.history)
+    lr_finder.plot(skip_start=0, skip_end=0)
+    lr_finder.reset()
+
+for wd, hist in zip(weight_decays, historys):
+    lrs = hist["lr"]
+    losses = hist["loss"]
+    plt.plot(lrs, losses, label=str(wd))
+    plt.xscale("log")
+plt.xlabel("Learning Rate")
+plt.ylabel("Loss")
+plt.legend()
+plt.title("Learning Rate vs Loss for different weight decay values")
+plt.savefig(str(config["save_files_path"] + "/lr_analysis.png"), dpi=400)

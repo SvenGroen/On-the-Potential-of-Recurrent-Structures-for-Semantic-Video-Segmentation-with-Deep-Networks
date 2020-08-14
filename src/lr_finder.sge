@@ -1,5 +1,5 @@
 #!/bin/bash
-#$ -l mem=4G
+#$ -l mem=4g
 #$ -cwd
 #$ -l cuda=1
 #$ -pe default 1
@@ -23,7 +23,7 @@ echo ""
 echo "Start"
 echo ""
 
-setup_file=src/eval_model.py
+setup_file=src/lr_finder.py
 env_name=torch
 #Scratch_wd_21 is a variable that stores the path to my scratch folder in which i installed anaconda
 export SCRATCH_WD_21="/net/projects/scratch/summer/valid_until_31_January_2021/sgroen"
@@ -36,5 +36,6 @@ echo "RUNNING: " $setup_file
 echo "Current Environemt: " $env_name
 
 
-python $setup_file -stps $STPS -rdm $RDM -fnl $FNL -pth $PTH
+python $setup_file -cfg $CFG 
+
 

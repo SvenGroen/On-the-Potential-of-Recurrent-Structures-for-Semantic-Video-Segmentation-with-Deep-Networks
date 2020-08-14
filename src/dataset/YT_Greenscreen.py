@@ -46,11 +46,6 @@ def hstack(images):
 class YT_Greenscreen(data.Dataset):
 
     def __init__(self, train=True, start_index=torch.tensor([0]), batch_size=1):
-        import os
-        import sys
-        sys.stderr.write("\nin dataset: " + os.getcwd() + "\n")
-        print("in dataset: ", os.getcwd())
-
         self.train = train
         self.mode = "train" if train else "test"
         with open("src/dataset/data/images/YT_4sec/" + self.mode + "/out_log.json", "r") as json_file:
