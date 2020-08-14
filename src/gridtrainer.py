@@ -160,7 +160,7 @@ class GridTrainer:
                 self.scheduler.step()
                 self.logger["running_loss"] += loss.item() * images.size(0)
 
-            sys.stderr.write("\n Appending Loss and LR:\nEpoch: {}, idx: {}".format(self.logger["epochs"][-1], idx))
+            sys.stderr.write("\n---BATCH END---\nAppending Loss and LR:\nEpoch: {},\t lrs: {}\t Loss: {}\n".format(self.logger["epochs"], self.logger["lrs"], self.logger["loss"]))
             self.logger["lrs"].append(self.optimizer.state_dict()["param_groups"][0]["lr"])
             self.logger["loss"].append(self.logger["running_loss"] / len(self.dataset))
 
