@@ -25,7 +25,7 @@ echo "Start"
 echo ""
 
 cd ..
-setup_file=src/lr_finder.py
+setup_file=src/lr_starter.py
 env_name=torch
 #Scratch_wd_21 is a variable that stores the path to my scratch folder in which i installed anaconda
 export SCRATCH_WD_21="/net/projects/scratch/summer/valid_until_31_January_2021/sgroen"

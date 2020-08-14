@@ -1,1 +1,0 @@
-{"model": "Deep_resnet50_lstmV4", "weight_decay": 0, "batch_size": 6, "num_epochs": 100, "evaluation_steps": 2, "loss": "CrossBatch", "save_folder_path": "src/models/LR_Tests/bs_6", "track_ID": 15, "unique_name": "Deep_resnet50_lstmV4bs6num_iter100ID15", "save_files_path": "src\\models\\LR_Tests\\bs_6\\Deep_resnet50_lstmV4bs6num_iter100ID15"}

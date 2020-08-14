@@ -1,6 +1,8 @@
 /.idea
 src/dataset/data/*
 src/models/trained_models/*
+src/models/LR_Tests/*
+src/models/LR_Tests/bs_*/*
 src/job_starter.*
 src/log_*
 src/__pycache__/*

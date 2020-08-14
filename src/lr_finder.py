@@ -8,15 +8,14 @@ from src.dataset.YT_Greenscreen import YT_Greenscreen
 from src.gridtrainer import GridTrainer
 import matplotlib.pyplot as plt
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = "cuda" if torch.cuda.is_available() else "cpu"
 parser = argparse.ArgumentParser()
 
 parser.add_argument("-cfg", "--config",
                     help="Config location", type=str)
 args = parser.parse_args()
 
-with open(args.cfg) as js:
-    print("Loading config: ", args.path)
+with open(args.config) as js:
     config = json.load(js)
 
 historys = []
@@ -28,7 +27,7 @@ for wd in weight_decays:
     val_dataset = YT_Greenscreen(train=False, start_index=0, batch_size=trainer.config["batch_size"])
     val_loader = DataLoader(val_dataset, val_dataset.batch_size, shuffle=False)
     optimizer = optim.Adam(model.parameters(), lr=1e-7, weight_decay=wd)
-    lr_finder = LRFinder(model, optimizer, criterion, device="cpu")
+    lr_finder = LRFinder(model, optimizer, criterion, device=device)
     lr_finder.range_test(trainer.loader, end_lr=10, num_iter=config["num_epochs"])  # , val_loader=val_loader
     historys.append(lr_finder.history)
     lr_finder.plot(skip_start=0, skip_end=0)
