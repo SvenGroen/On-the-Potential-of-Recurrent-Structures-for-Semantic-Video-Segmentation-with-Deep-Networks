@@ -2,12 +2,12 @@ import argparse
 import json
 import torch
 from torch import optim
-from torch_lr_finder import LRFinder
+from src.utils.torch_lr_finder.lr_finder import LRFinder
 from torch.utils.data import DataLoader
 from src.dataset.YT_Greenscreen import YT_Greenscreen
 from src.gridtrainer import GridTrainer
 import matplotlib.pyplot as plt
-
+#-cfg src\models\LR_Tests\bs_6\Deep_resnet50_gruV4bs6num_iter100ID19/train_config.json
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 parser = argparse.ArgumentParser()
 
@@ -15,8 +15,7 @@ parser.add_argument("-cfg", "--config",
                     help="Config location", type=str)
 args = parser.parse_args()
 
-with open(args.cfg) as js:
-    print("Loading config: ", args.path)
+with open(args.config) as js:
     config = json.load(js)
 
 historys = []

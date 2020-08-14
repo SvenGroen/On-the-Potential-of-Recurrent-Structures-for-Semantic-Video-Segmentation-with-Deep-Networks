@@ -17,7 +17,7 @@ for model in models:
     config["batch_size"] = 6
     config["num_epochs"] = 100
     config["evaluation_steps"] = 2
-    config["loss"] = "CrossBatch"
+    config["loss"] = "CrossDice"
     config["save_folder_path"] = "src/models/LR_Tests/bs_" + str(config["batch_size"])
 
     # print(config)
