@@ -37,7 +37,7 @@ for i, config in enumerate(configs):
         json.dump(config, js)
 
     job_name = "LR" + str(config["track_ID"]).zfill(2)
-    VRAM = 3.8
+    VRAM = "9G"
     recallParameter = "qsub -N " + job_name + config["model"] + ' -l nv_mem_free=' + str(VRAM) \
                       + " -o " + str(config["save_files_path"]) + "/log_files/" + job_name + ".o$JOB_ID" \
                       + " -e " + str(config["save_files_path"]) + "/log_files/" + job_name + ".e$JOB_ID" \

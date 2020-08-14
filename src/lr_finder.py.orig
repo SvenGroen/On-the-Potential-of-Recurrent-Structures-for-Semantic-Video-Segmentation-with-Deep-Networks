@@ -2,14 +2,18 @@ import argparse
 import json
 import torch
 from torch import optim
-from torch_lr_finder import LRFinder
+from src.utils.torch_lr_finder.lr_finder import LRFinder
 from torch.utils.data import DataLoader
 from src.dataset.YT_Greenscreen import YT_Greenscreen
 from src.gridtrainer import GridTrainer
 import matplotlib.pyplot as plt
+<<<<<<< HEAD
 #-cfg src\models\LR_Tests\bs_6\Deep_resnet50_gruV4bs6num_iter100ID19/train_config.json
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+=======
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
+>>>>>>> e225d05f31b8819496017b429e2d60bf3fc8095f
 parser = argparse.ArgumentParser()
 
 parser.add_argument("-cfg", "--config",
