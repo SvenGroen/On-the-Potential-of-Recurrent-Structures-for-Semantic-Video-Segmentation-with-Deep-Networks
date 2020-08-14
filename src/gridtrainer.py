@@ -17,7 +17,7 @@ from src.utils.visualizations import visualize_logger
 
 
 class GridTrainer:
-    def __init__(self, config, train=True, batch_size=None):
+    def __init__(self, config, train=True, batch_size=None, load_from_checkpoint=True):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.config = config
         self.model, self.lr_boundarys = initiator.initiate_model(self.config)
@@ -41,7 +41,8 @@ class GridTrainer:
                                                      mode="triangular2",
                                                      step_size_up=6 * len(self.loader))  # 6 * len(self.loader)
         self._RESTART = False
-        self.load_after_restart()
+        if load_from_checkpoint:
+            self.load_after_restart()
 
     def load_from_checkpoint(self, checkpoint):
         print("=> Loading checkpoint at epoch {}".format(checkpoint["epochs"][-1]))
