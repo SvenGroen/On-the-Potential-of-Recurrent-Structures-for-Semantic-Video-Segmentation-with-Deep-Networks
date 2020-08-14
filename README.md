@@ -1,29 +1,37 @@
 # Video_Segmentation
 
 
-# References:
-SegLoss:
-https://github.com/JunMa11/SegLoss
-SoftDiceLoss was used
+# References and changes:
+SegLoss:  
+https://github.com/JunMa11/SegLoss  
+SoftDiceLoss was used.
 
 Metrics:
 
 
-DeeplabV3+:
-https://github.com/VainF/DeepLabV3Plus-Pytorch
-custom DeeplabV3-Head added (DeeplabV3-LSTMHead and DeeplabV3-GRUHead)
+DeeplabV3+:  
+https://github.com/VainF/DeepLabV3Plus-Pytorch  
+custom DeeplabV3-Head added (DeeplabV3-LSTMHead and DeeplabV3-GRUHead).
 
-ConvLSTM:
-https://github.com/ndrplz/ConvLSTM_pytorch
-modified to keep hidden and cell state until signal is given
+ConvLSTM:  
+https://github.com/ndrplz/ConvLSTM_pytorch  
+modified to keep hidden and cell state until signal is given.
 
-ConvGRU:
-https://github.com/happyjin/ConvGRU-pytorch
-modified to keep hidden and cell state until signal is given
+ConvGRU:  
+https://github.com/happyjin/ConvGRU-pytorch  
+modified to keep hidden and cell state until signal is given.
 
-LR_finder:
-https://github.com/davidtvs/pytorch-lr-finder
-modified to fit custom dataset return values and reseting of the model if a new 4 second clip starts
+LR_finder:  
+https://github.com/davidtvs/pytorch-lr-finder  
+use: `pip install torch-lr-finder` to install the LR-finder package.  
+I extracted the downloaded "torch_lr_finder" folder from: 
+> "C:\ProgramData\Anaconda3\envs\<my_conda_env>\Lib\site-packages\torch_lr_finder" 
+
+placed it into: 
+> Video_Segementation/src/utils/
+
+and made changed to `__init__.py` and `lr_finder.py`.
+I modified `lr_finder.py` to fit my custom dataset return values and resetting of the model if a new 4 second clip starts.
 
 # Pip list:
 Package and Version            

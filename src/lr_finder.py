@@ -2,7 +2,7 @@ import argparse
 import json
 import torch
 from torch import optim
-from torch_lr_finder import LRFinder
+from src.utils.torch_lr_finder.lr_finder import LRFinder
 from torch.utils.data import DataLoader
 from src.dataset.YT_Greenscreen import YT_Greenscreen
 from src.gridtrainer import GridTrainer
