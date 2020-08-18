@@ -6,6 +6,8 @@ import torch
 from src.gridtrainer import GridTrainer
 from src.utils.visualizations import visualize_metric
 
+# -stps 2 -rdm 0 -pth src/models/trained_models/YT_miniV3_3d/Deep+_mobile_wd0e+00bs6num_ep100ev2ID0 -fnl 1
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 parser = argparse.ArgumentParser()
 parser.add_argument("-stps", "--steps",
@@ -23,10 +25,10 @@ with open(args.path + "/train_config.json") as js:
     config = json.load(js)
 out = args.path + "/intermediate_results" if not args.final else args.path + "/final_results"
 # First evaluate on Train set and afterwards on validation dataset
-train_trainer = GridTrainer(config=config, train=True, batch_size=1)
+train_trainer = GridTrainer(config=config, train=True, batch_size=6)
 train_trainer.eval(random_start=args.random if not args.final else False,
                    eval_length=args.steps if not args.final else len(train_trainer.dataset), save_file_path=out)
-val_trainer = GridTrainer(config=config, train=False, batch_size=1)
+val_trainer = GridTrainer(config=config, train=False, batch_size=6)
 val_trainer.eval(random_start=args.random if not args.final else False,
                  eval_length=args.steps if not args.final else len(val_trainer.dataset), save_file_path=out)
 metric_logger = torch.load(config["save_files_path"] + "/metrics.pth.tar", map_location=device)

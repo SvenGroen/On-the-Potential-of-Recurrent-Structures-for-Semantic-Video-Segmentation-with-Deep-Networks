@@ -26,11 +26,12 @@ class GridTrainer:
         # self.logger = initiator.initiate_logger(self.lr_boundarys[0])
         self.logger = defaultdict(list)
         self.metric_logger = defaultdict(list)
+        self.batch_size = self.config["batch_size"] if batch_size is None else batch_size
         self.time_logger = time_logger.TimeLogger(restart_time=60 * 60 * 1.2)  # 60 * 60 * 1.2
         self.dataset = YT_Greenscreen(train=train, start_index=0,
-                                      batch_size=self.config["batch_size"] if batch_size is None else batch_size)
+                                      batch_size=self.batch_size)
         self.loader = DataLoader(dataset=self.dataset, shuffle=False,
-                                 batch_size=self.config["batch_size"] if batch_size is None else batch_size)
+                                 batch_size=self.batch_size)
         self.optimizer = optim.Adam(self.model.parameters(),
                                     lr=self.lr_boundarys[0],
                                     weight_decay=self.weight_decay)
@@ -113,8 +114,8 @@ class GridTrainer:
         job_name = "IE" + str(self.config["track_ID"]).zfill(2) + "e" + str(self.logger["epochs"][-1])
         VRAM = 3.8
         recallParameter = "qsub -N " + job_name + self.config["model"] + ' -l nv_mem_free=' + str(VRAM) \
-                          + " -o " + str(self.config["save_files_path"]) + "/log_files/IE" + job_name + ".o$JOB_ID" \
-                          + " -e " + str(self.config["save_files_path"]) + "/log_files/IE" + job_name + ".e$JOB_ID" \
+                          + " -o " + str(self.config["save_files_path"]) + "/log_files/" + job_name + ".o$JOB_ID" \
+                          + " -e " + str(self.config["save_files_path"]) + "/log_files/" + job_name + ".e$JOB_ID" \
                           + " -v STPS=" + str(num_eval_steps) \
                           + " -v RDM=" + str(int(random_start)) \
                           + " -v FNL=" + str(int(final)) \
@@ -153,7 +154,7 @@ class GridTrainer:
                 if torch.any(video_start):
                     self.model.reset()
 
-                if len(idx) == self.config["batch_size"]:
+                if len(idx) == self.batch_size:
                     if torch.sum(idx == 0) > 1:
                         sys.stderr.write(f"\nEnd reached of batch at index {idx}\n")
                         self.dataset.start_index = 0  # reset start index for the next batch
@@ -193,7 +194,7 @@ class GridTrainer:
             if random_start:
                 start_index = np.random.choice(range(len(self.dataset) - eval_length))
                 self.dataset.set_start_index(int(start_index))
-            loader = DataLoader(dataset=self.dataset, batch_size=1, shuffle=False, num_workers=0)
+            loader = DataLoader(dataset=self.dataset, batch_size=self.batch_size, shuffle=False, num_workers=0)
             out_folder = Path(save_file_path)
             out_folder.mkdir(parents=True, exist_ok=True)
             mode = "train" if self.dataset.train else "val"
@@ -225,21 +226,21 @@ class GridTrainer:
                 metrics["Dice"].update(avg_dice)
 
                 # conversions since hstack expects PIL image or np array and cv2 np array with channel at last position
-                for i in range(self.config["batch_size"]):  # if batchsize > 1 assert that the video writing works
-                    outputs = outputs[i, :, :].unsqueeze(0)
-                    labels = labels[i, :, :].unsqueeze(0)
-                    images = images[i, :, :, :].unsqueeze(0)
-                    tmp_prd = to_PIL(outputs[0].cpu().float())
-                    tmp_inp = to_PIL(images.squeeze(0).cpu())
+                for j in range(self.batch_size):  # if batchsize > 1 assert that the video writing works
+                    out = outputs[j, :, :].unsqueeze(0)
+                    lbl = labels[j, :, :].unsqueeze(0)
+                    img = images[j, :, :, :].unsqueeze(0)
+                    tmp_prd = to_PIL(out[0].cpu().float())
+                    tmp_inp = to_PIL(img.squeeze(0).cpu())
                     tmp_inp = Image.fromarray(cv2.cvtColor(np.asarray(tmp_inp), cv2.COLOR_RGB2BGR))
-                    tmp_lbl = to_PIL(labels.cpu().float())
+                    tmp_lbl = to_PIL(lbl.cpu().float())
                     out_vid.write(np.array(stack.hstack([tmp_inp, tmp_lbl, tmp_prd])))
                     # break after certain amount of frames (remove for final (last) evaluation)
                 if i == eval_length:
                     break
             metrics["eval_loss"].update(running_loss)
             metrics["curr_epoch"] = self.logger["epochs"][-1]
-            metrics["num_params"] = sum([param.nelement() for param in self.model.parameters()])
+            metrics["num_params"].update(sum([param.nelement() for param in self.model.parameters()]))
             out_vid.release()
             self.model.train()
             self.model.end_eval()
