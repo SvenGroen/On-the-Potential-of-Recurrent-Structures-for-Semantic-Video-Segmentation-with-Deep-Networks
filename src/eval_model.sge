@@ -3,8 +3,8 @@
 #$ -cwd
 #$ -l cuda=1
 #$ -pe default 1
-#$ -l h_rt=01:29:00
-#$ -l hostname=!*cippy*
+#$ -l h_rt=05:00:00
+#$ -l hostname=!*ocular*
 #$ -l cuda=1
 #$ -m n
 

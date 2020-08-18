@@ -52,11 +52,19 @@ class DeepLabHeadV3PlusGRU(nn.Module):
         self.hidden = [None]
         self.store_previous = store_previous
         self.old_pred = [None, None]
+        # self.conv3d = nn.Sequential(
+        #     nn.Conv3d(in_channels=3 if store_previous else 1, out_channels=1, kernel_size=1, padding=0, stride=1),
+        #     nn.BatchNorm3d(num_features=1),
+        #     nn.ReLU()
+        # )
         self.conv3d = nn.Sequential(
-            nn.Conv3d(in_channels=3 if store_previous else 1, out_channels=1, kernel_size=1, padding=0, stride=1),
+            nn.Conv3d(in_channels=3 , out_channels=2, kernel_size=3, padding=1),
+            nn.Conv3d(in_channels=2, out_channels=1, kernel_size=3, padding=1),
             nn.BatchNorm3d(num_features=1),
-            nn.ReLU()
+            nn.PReLU()
         )
+
+
 
     def forward(self, feature):
         low_level_feature = self.project(feature['low_level'])
@@ -75,8 +83,8 @@ class DeepLabHeadV3PlusGRU(nn.Module):
         out, self.hidden = self.gru(out, self.hidden[-1])
         self.hidden = [tuple(state.detach() for state in i) for i in self.hidden]
         out = out[0]
-        out = self.conv3d(out)
         if self.store_previous:
+            out = self.conv3d(out)
             self.old_pred[0] = self.old_pred[1]  # oldest at 0 position
             self.old_pred[1] = out.detach()  # newest at 1 position
         return self.classifier(out[:, -1, :, :, :])
@@ -107,10 +115,16 @@ class DeepLabHeadV3PlusLSTM(nn.Module):
             nn.ReLU(inplace=True),
             nn.Conv2d(256, num_classes, 1)
         )
+        # self.conv3d = nn.Sequential(
+        #     nn.Conv3d(in_channels=3 if store_previous else 1, out_channels=1, kernel_size=1, padding=0, stride=1),
+        #     nn.BatchNorm3d(num_features=1),
+        #     nn.ReLU()
+        # )
         self.conv3d = nn.Sequential(
-            nn.Conv3d(in_channels=3 if store_previous else 1, out_channels=1, kernel_size=1, padding=0, stride=1),
+            nn.Conv3d(in_channels=3, out_channels=2, kernel_size=3, padding=1),
+            nn.Conv3d(in_channels=2, out_channels=1, kernel_size=3, padding=1),
             nn.BatchNorm3d(num_features=1),
-            nn.ReLU()
+            nn.PReLU()
         )
         self._init_weight()
         self.lstm = ConvLSTM(input_dim=304, hidden_dim=[304], kernel_size=(3, 3), num_layers=1, batch_first=True,
@@ -136,8 +150,8 @@ class DeepLabHeadV3PlusLSTM(nn.Module):
         out, self.hidden = self.lstm(out, self.hidden)
         self.hidden = [tuple(state.detach() for state in i) for i in self.hidden]
         out = out[0]
-        out = self.conv3d(out)
         if self.store_previous:
+            out = self.conv3d(out)
             self.old_pred[0] = self.old_pred[1]  # oldest at 0 position
             self.old_pred[1] = out.detach()  # newest at 1 position
         return self.classifier(out[:, -1, :, :, :])
