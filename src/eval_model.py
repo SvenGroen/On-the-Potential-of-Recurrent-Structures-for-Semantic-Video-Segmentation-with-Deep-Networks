@@ -25,10 +25,10 @@ out = args.path + "/intermediate_results" if not args.final else args.path + "/f
 # First evaluate on Train set and afterwards on validation dataset
 train_trainer = GridTrainer(config=config, train=True, batch_size=1)
 train_trainer.eval(random_start=args.random if not args.final else False,
-                   eval_length=args.steps if not args.final else len(train_trainer.dataset)/2, save_file_path=out)
+                   eval_length=args.steps if not args.final else len(train_trainer.dataset), save_file_path=out)
 val_trainer = GridTrainer(config=config, train=False, batch_size=1)
 val_trainer.eval(random_start=args.random if not args.final else False,
-                 eval_length=args.steps if not args.final else len(val_trainer.dataset)/2, save_file_path=out)
+                 eval_length=args.steps if not args.final else len(val_trainer.dataset), save_file_path=out)
 metric_logger = torch.load(config["save_files_path"] + "/metrics.pth.tar", map_location=device)
 
 visualize_metric(metric_log=metric_logger, step_size=config["evaluation_steps"],
