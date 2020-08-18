@@ -250,7 +250,7 @@ if __name__ == "__main__":
     - num epochs
     - evaluation_steps
     '''
-    model = "Deep+_mobile"
+    model = "Deep_mobile_lstmV3"
     weight_decay = 1e-8
     batch_size = 6
     track_id = 00
@@ -272,5 +272,5 @@ if __name__ == "__main__":
     Path(config["save_files_path"]).mkdir(parents=True, exist_ok=True)
     with open(str(Path(config["save_files_path"]) / "train_config.json"), "w") as js:  # save learn config
         json.dump(config, js)
-    trainer = GridTrainer(config)
+    trainer = GridTrainer(config, load_from_checkpoint=False)
     trainer.train()

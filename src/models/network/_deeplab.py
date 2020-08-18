@@ -117,6 +117,8 @@ class DeepLabHeadV3PlusLSTM(nn.Module):
                              bias=True,
                              return_all_layers=False)
         self.hidden = None
+        self.store_previous = store_previous
+        self.old_pred =[None, None]
 
     def forward(self, feature):
         low_level_feature = self.project(feature['low_level'])

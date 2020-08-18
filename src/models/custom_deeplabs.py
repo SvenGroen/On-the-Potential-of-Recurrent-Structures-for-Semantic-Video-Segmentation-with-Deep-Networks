@@ -143,23 +143,29 @@ class Deeplabv3Plus_lstmV3(nn.Module):
             self.base = deeplabv3plus_resnet50(num_classes=2, pretrained_backbone=True)
             in_channels = 2048
             low_level_channels = 256
-        self.classifier = DeepLabHeadV3PlusLSTM(in_channels, low_level_channels, 2, [12, 24, 36])
+        self.base.classifier = DeepLabHeadV3PlusLSTM(in_channels, low_level_channels, 2, [12, 24, 36])
+        self.tmp_old_pred = [None, None]
         self.tmp_hidden = None
 
     def reset(self):
-        self.classifier.hidden = None
+        self.base.classifier.hidden = None
+        self.base.classifier.old_pred = [None, None]
 
     def start_eval(self):
         self.tmp_hidden = self.classifier.hidden
-        self.classifier.hidden = None
+        self.tmp_old_pred = self.base.classifier.old_pred
+        self.reset()
 
     def end_eval(self):
-        self.classifier.hidden = self.tmp_hidden
+        self.base.classifier.hidden = self.tmp_hidden
+        self.base.classifier.old_pred = self.tmp_old_pred
         self.tmp_hidden = None
+        self.tmp_old_pred = [None, None]
 
     def forward(self, x, *args):
         input_shape = x.shape[-2:]
         out = self.base(x)
+
         out = F.interpolate(out, size=input_shape, mode='bilinear', align_corners=False)
         return out
 
@@ -175,20 +181,24 @@ class Deeplabv3Plus_lstmV4(nn.Module):
             self.base = deeplabv3plus_resnet50(num_classes=2, pretrained_backbone=True)
             in_channels = 2048
             low_level_channels = 256
-        self.classifier = DeepLabHeadV3PlusLSTM(in_channels, low_level_channels, 2, [12, 24, 36], store_previous=True)
-
+        self.base.classifier = DeepLabHeadV3PlusLSTM(in_channels, low_level_channels, 2, [12, 24, 36], store_previous=True)
+        self.tmp_old_pred = [None, None]
         self.tmp_hidden = None
 
     def reset(self):
-        self.classifier.hidden = None
+        self.base.classifier.hidden = None
+        self.base.classifier.old_pred = [None, None]
 
     def start_eval(self):
         self.tmp_hidden = self.classifier.hidden
-        self.classifier.hidden = None
+        self.tmp_old_pred = self.base.classifier.old_pred
+        self.reset()
 
     def end_eval(self):
-        self.classifier.hidden = self.tmp_hidden
+        self.base.classifier.hidden = self.tmp_hidden
+        self.base.classifier.old_pred = self.tmp_old_pred
         self.tmp_hidden = None
+        self.tmp_old_pred = [None, None]
 
     def forward(self, x, *args):
         input_shape = x.shape[-2:]
@@ -290,7 +300,7 @@ class Deeplabv3Plus_gruV1(nn.Module):
         x = x.unsqueeze(1)
         out, self.hidden = self.gru(x, self.hidden[-1])
         self.hidden = [tuple(state.detach() for state in i) for i in self.hidden]
-        out = out[0][:, -1, :, :, :]  # <--- not to sure if 0 or -1
+        out = out[0][:, -1, :, :, :]
         return out
 
 
