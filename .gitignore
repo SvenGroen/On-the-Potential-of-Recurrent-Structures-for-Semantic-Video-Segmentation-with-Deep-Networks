@@ -9,4 +9,5 @@ src/__pycache__/*
 src/dataset/_pycache__/
 src/*/*/__pycache__/
 src/models/LR_Tests/bs_6/
+src/models/LR_Tests_update/
 src/utils/__pycache__/
