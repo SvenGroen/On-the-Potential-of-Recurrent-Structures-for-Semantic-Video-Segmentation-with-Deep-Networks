@@ -12,17 +12,19 @@ print(os.getcwd())
 
 sys.stderr.write("start writing configs\n")
 
-# models = ["Deep+_mobile", "Deep_mobile_lstmV4", "Deep_mobile_gruV4", "Deep_mobile_gruV1", "Deep_mobile_gruV2",
-#           "Deep_mobile_gruV3", "Deep_mobile_lstmV1", "Deep_mobile_lstmV2_1", "Deep_mobile_lstmV2_2",
-#           "Deep_mobile_lstmV3", "Deep+_resnet50"]
-models = [ "Deep_resnet50_lstmV1", "Deep_resnet50_lstmV2", "Deep_resnet50_lstmV3",
-"Deep_resnet50_lstmV4", "Deep_resnet50_gruV1", "Deep_resnet50_gruV2", "Deep_resnet50_gruV3", "Deep_resnet50_gruV4"]
+models = ["Deep+_mobile", "Deep_mobile_lstmV4", "Deep_mobile_gruV4", "Deep_mobile_gruV1", "Deep_mobile_gruV2",
+          "Deep_mobile_gruV3", "Deep_mobile_lstmV1", "Deep_mobile_lstmV2_1", "Deep_mobile_lstmV2_2",
+          "Deep_mobile_lstmV3","Deep_mobile_lstmV5_2", "Deep+_resnet50", "Deep_resnet50_lstmV1", "Deep_resnet50_lstmV2",
+          "Deep_resnet50_lstmV3", "Deep_resnet50_lstmV4", "Deep_resnet50_gruV1", "Deep_resnet50_gruV2",
+          "Deep_resnet50_gruV3", "Deep_resnet50_gruV4"]
+# models = [ "Deep_resnet50_lstmV1", "Deep_resnet50_lstmV2", "Deep_resnet50_lstmV3",
+# "Deep_resnet50_lstmV4", "Deep_resnet50_gruV1", "Deep_resnet50_gruV2", "Deep_resnet50_gruV3", "Deep_resnet50_gruV4"]
 
-batch_sizes = 6
+batch_sizes = 8
 num_epochs = 100
-loss = ["CrossDice"]  # "CrossEntropy"
+loss = ["SoftDice"]  # "CrossEntropy"
 wds = [0]
-eval_steps = 2
+eval_steps = 15
 
 config_paths = []
 models_name = []
@@ -38,7 +40,7 @@ for model in models:
         config["num_epochs"] = num_epochs
         config["evaluation_steps"] = eval_steps
         config["loss"] = loss[i]
-        config["save_folder_path"] = "src/models/trained_models/YT_miniV3_3d"
+        config["save_folder_path"] = "src/models/trained_models/yt_fullV1/"
 
         # print(config) 
         configs.append(config)

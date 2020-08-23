@@ -1,0 +1,19 @@
+ Start of SGE job 
+
+
+Hostname
+voxel.cv.uni-osnabrueck.de
+Job-ID:
+623061
+user:
+sgroen
+
+Start
+
+RUNNING:  src/lr_finder.py
+Current Environemt:  torch
+Learning rate search finished. See the graph with {finder_name}.plot()
+Learning rate search finished. See the graph with {finder_name}.plot()
+Learning rate search finished. See the graph with {finder_name}.plot()
+Learning rate search finished. See the graph with {finder_name}.plot()
+Learning rate search finished. See the graph with {finder_name}.plot()

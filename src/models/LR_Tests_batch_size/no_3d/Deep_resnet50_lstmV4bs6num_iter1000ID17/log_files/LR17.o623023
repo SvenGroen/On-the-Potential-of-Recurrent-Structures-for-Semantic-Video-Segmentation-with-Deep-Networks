@@ -1,0 +1,14 @@
+ Start of SGE job 
+
+
+Hostname
+voxel.cv.uni-osnabrueck.de
+Job-ID:
+623041
+user:
+sgroen
+
+Start
+
+RUNNING:  src/lr_finder.py
+Current Environemt:  torch
