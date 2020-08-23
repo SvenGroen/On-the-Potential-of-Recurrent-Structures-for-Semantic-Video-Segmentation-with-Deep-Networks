@@ -10,7 +10,7 @@ import os
 
 import torch
 
-model_path = Path("src/models/trained_models/YT_miniV2_no3d")
+model_path = Path("src/models/trained_models/YT_miniV3_3d")
 
 results = []
 for folder in model_path.glob("*"):
@@ -70,7 +70,7 @@ for mode in ["train", "val"]:
                 'verticalalignment': 'baseline',
                 'horizontalalignment': "center"}
     tmp = [(0, 0), (0, 1), (1, 0), (1, 1)]
-    for name, df in [("mobile", mobile_df), ("resnet", resnet_df)]:
+    for name, df in [("mobile", mobile_df)]:#, ("resnet", resnet_df)
         f, ax = plt.subplots(2, 2, figsize=(50, 20))
         for pos, category in zip(tmp, categorys):
             ax[pos].bar(df["Label"], df[category])

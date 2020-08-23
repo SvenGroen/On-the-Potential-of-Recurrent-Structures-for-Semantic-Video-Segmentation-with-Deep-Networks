@@ -82,9 +82,9 @@ class DeepLabHeadV3PlusGRU(nn.Module):
 
         out, self.hidden = self.gru(out, self.hidden[-1])
         self.hidden = [tuple(state.detach() for state in i) for i in self.hidden]
-        out = out[0]
+        out = out[0][:, -1, :, :, :]
         if self.store_previous:
-            out = self.conv3d(out)
+            # out = self.conv3d(out)
             self.old_pred[0] = self.old_pred[1]  # oldest at 0 position
             self.old_pred[1] = out.detach()  # newest at 1 position
         return self.classifier(out[:, -1, :, :, :])
@@ -149,9 +149,9 @@ class DeepLabHeadV3PlusLSTM(nn.Module):
 
         out, self.hidden = self.lstm(out, self.hidden)
         self.hidden = [tuple(state.detach() for state in i) for i in self.hidden]
-        out = out[0]
+        out = out[0][:, -1, :, :, :].unsqueeze(1)
         if self.store_previous:
-            out = self.conv3d(out)
+            # out = self.conv3d(out)
             self.old_pred[0] = self.old_pred[1]  # oldest at 0 position
             self.old_pred[1] = out.detach()  # newest at 1 position
         return self.classifier(out[:, -1, :, :, :])

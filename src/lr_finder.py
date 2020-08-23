@@ -8,6 +8,7 @@ from src.dataset.YT_Greenscreen import YT_Greenscreen
 from src.gridtrainer import GridTrainer
 import matplotlib.pyplot as plt
 #-cfg src\models\LR_Tests\bs_6\Deep_resnet50_gruV4bs6num_iter100ID19/train_config.json
+#-cfg src\models\LR_Tests_update\bs_6\Deep_mobile_lstmV4bs6num_iter3ID0/train_config.json
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 parser = argparse.ArgumentParser()
@@ -20,14 +21,15 @@ with open(args.config) as js:
     config = json.load(js)
 
 historys = []
-weight_decays = [0, 1e-1, 1e-2, 1e-4, 1e-6]
+# weight_decays = [0, 1e-1, 1e-2, 1e-4, 1e-6]
+weight_decays =[2,4]
 for wd in weight_decays:
-    trainer = GridTrainer(config, load_from_checkpoint=False)
+    trainer = GridTrainer(config, load_from_checkpoint=False, batch_size=wd)
     model = trainer.model
     criterion = trainer.criterion
-    val_dataset = YT_Greenscreen(train=False, start_index=0, batch_size=trainer.config["batch_size"])
+    val_dataset = YT_Greenscreen(train=False, start_index=0, batch_size=wd)#trainer.config["batch_size"]
     val_loader = DataLoader(val_dataset, val_dataset.batch_size, shuffle=False)
-    optimizer = optim.Adam(model.parameters(), lr=1e-9, weight_decay=wd)
+    optimizer = optim.Adam(model.parameters(), lr=1e-9, weight_decay=0)
     lr_finder = LRFinder(model, optimizer, criterion, device=device)
     lr_finder.range_test(trainer.loader, end_lr=10, num_iter=config["num_epochs"])  # , val_loader=val_loader
     historys.append(lr_finder.history)
