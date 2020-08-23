@@ -14,6 +14,7 @@ from tqdm import tqdm
 from src.dataset.YT_Greenscreen import YT_Greenscreen
 from src.utils import initiator, time_logger, AverageMeter, stack, eval_metrics
 from src.utils.visualizations import visualize_logger
+# from src.utils.metrics import get_gpu_memory_map
 
 
 class GridTrainer:
@@ -36,13 +37,13 @@ class GridTrainer:
                                     lr=self.lr_boundarys[0],
                                     weight_decay=self.weight_decay)
 
-        # self.scheduler = optim.lr_scheduler.CyclicLR(self.optimizer,
-        #                                              base_lr=self.lr_boundarys[0], max_lr=self.lr_boundarys[1],
-        #                                              cycle_momentum=False,
-        #                                              mode="triangular2",
-        #                                              step_size_up=7 * int(len(self.loader)))  # 6 * len(self.loader)
-        self.scheduler = optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=self.lr_boundarys[1],
-                                                       steps_per_epoch=len(self.loader), epochs=self.config["num_epochs"])
+        self.scheduler = optim.lr_scheduler.CyclicLR(self.optimizer,
+                                                     base_lr=self.lr_boundarys[0], max_lr=self.lr_boundarys[1],
+                                                     cycle_momentum=False,
+                                                     mode="triangular2",
+                                                     step_size_up=7 * int(len(self.loader)))  # 6 * len(self.loader)
+        # self.scheduler = optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=self.lr_boundarys[1],
+        #                                              steps_per_epoch=len(self.loader), epochs=self.config["num_epochs"])
         self._RESTART = False
         if load_from_checkpoint:
             self.load_after_restart()
@@ -219,6 +220,8 @@ class GridTrainer:
                                                                                   labels.to("cpu"),
                                                                                   num_classes=2)
                 running_loss += loss.item() * images.size(0)
+                # if torch.cuda.is_available:
+                #     metrics["cuda_mem"].update(metrics.get)
                 metrics["Time_taken"].update(end)
                 metrics["Mean IoU"].update(avg_jacc)
                 metrics["Pixel Accuracy"].update(overall_acc)

@@ -1,0 +1,25 @@
+ Start of SGE job 
+
+
+Hostname
+vr6.ikw.uni-osnabrueck.de
+Job-ID:
+623045
+user:
+sgroen
+
+Start
+
+RUNNING:  src/lr_finder.py
+Current Environemt:  torch
+Stopping early, the loss has diverged
+Learning rate search finished. See the graph with {finder_name}.plot()
+Stopping early, the loss has diverged
+Learning rate search finished. See the graph with {finder_name}.plot()
+Stopping early, the loss has diverged
+Learning rate search finished. See the graph with {finder_name}.plot()
+Stopping early, the loss has diverged
+Learning rate search finished. See the graph with {finder_name}.plot()
+Stopping early, the loss has diverged
+Learning rate search finished. See the graph with {finder_name}.plot()
+Learning rate search finished. See the graph with {finder_name}.plot()

@@ -1,0 +1,1 @@
+{"model": "Deep_mobile_lstmV4", "weight_decay": 0, "batch_size": 6, "num_epochs": 1000, "evaluation_steps": 2, "loss": "SoftDice", "save_folder_path": "src/models/LR_Tests_batch_size/no_3d/", "track_ID": 5, "unique_name": "Deep_mobile_lstmV4bs6num_iter1000ID5", "save_files_path": "src/models/LR_Tests_batch_size/no_3d/Deep_mobile_lstmV4bs6num_iter1000ID5"}

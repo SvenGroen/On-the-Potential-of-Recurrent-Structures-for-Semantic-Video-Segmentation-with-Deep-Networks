@@ -62,7 +62,7 @@ class YT_Greenscreen(data.Dataset):
         length = len(self.data["inputs"])
         rest = length % self.batch_size
 
-        return self.batch_size * 500 #length - rest
+        return length - rest  # self.batch_size * 500 #length - rest
 
     def set_start_index(self, idx):
         if isinstance(idx, int):
@@ -160,10 +160,10 @@ class Segmentation_transform:
     def random_apply(self):
         if random.random() < 0.5:
             self.angle = random.randint(-15, 15)
-            self.scale = random.choice([0.8, 1.2, 1.1, 1.3])
+            self.scale = random.choice([1, 1.2, 1.1, 1.3])
         if random.random() > 0.5:
             self.translate = (random.randint(-15, 15), random.randint(-15, 15))
-            self.scale = random.choice([0.8, 1.2, 1.1, 1.3])
+            self.scale = random.choice([1, 1.2, 1.1, 1.3])
         if random.random() > 0.5:
             self.shear = 0
         if random.random() > 0.5:

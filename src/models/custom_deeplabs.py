@@ -83,12 +83,12 @@ class Deeplabv3Plus_lstmV2(nn.Module):
         #     nn.BatchNorm3d(num_features=1),
         #     nn.ReLU()
         # )
-        self.conv3d = nn.Sequential(
-            nn.Conv3d(in_channels=3, out_channels=2, kernel_size=3, padding=1),
-            nn.Conv3d(in_channels=2, out_channels=1, kernel_size=3, padding=1),
-            nn.BatchNorm3d(num_features=1),
-            nn.PReLU()
-        )
+        # self.conv3d = nn.Sequential(
+        #     nn.Conv3d(in_channels=3, out_channels=2, kernel_size=1, padding=0),
+        #     nn.Conv3d(in_channels=2, out_channels=1, kernel_size=1, padding=0),
+        #     nn.BatchNorm3d(num_features=1),
+        #     nn.PReLU()
+        # )
         self.activate_3d = activate_3d
         self.hidden = None
         self.tmp_hidden = None
@@ -128,8 +128,8 @@ class Deeplabv3Plus_lstmV2(nn.Module):
 
         out, self.hidden = self.lstm(out, self.hidden)
         out = out[0]
-        if self.activate_3d:
-            out = self.conv3d(out)
+        # if self.activate_3d:
+            # out = self.conv3d(out)
 
         out = out[:, -1, :, :, :]  # <--- not to sure if 0 or -1
         self.hidden = [tuple(state.detach() for state in i) for i in self.hidden]
@@ -158,7 +158,7 @@ class Deeplabv3Plus_lstmV3(nn.Module):
         self.base.classifier.old_pred = [None, None]
 
     def start_eval(self):
-        self.tmp_hidden = self.classifier.hidden
+        self.tmp_hidden = self.base.classifier.hidden
         self.tmp_old_pred = self.base.classifier.old_pred
         self.reset()
 
@@ -196,7 +196,7 @@ class Deeplabv3Plus_lstmV4(nn.Module):
         self.base.classifier.old_pred = [None, None]
 
     def start_eval(self):
-        self.tmp_hidden = self.classifier.hidden
+        self.tmp_hidden = self.base.classifier.hidden
         self.tmp_old_pred = self.base.classifier.old_pred
         self.reset()
 
@@ -325,12 +325,12 @@ class Deeplabv3Plus_gruV2(nn.Module):
         #     nn.BatchNorm3d(num_features=1),
         #     nn.ReLU()
         # )
-        self.conv3d = nn.Sequential(
-            nn.Conv3d(in_channels=3, out_channels=2, kernel_size=3, padding=1),
-            nn.Conv3d(in_channels=2, out_channels=1, kernel_size=3, padding=1),
-            nn.BatchNorm3d(num_features=1),
-            nn.PReLU()
-        )
+        # self.conv3d = nn.Sequential(
+        #     nn.Conv3d(in_channels=3, out_channels=2, kernel_size=1, padding=0),
+        #     nn.Conv3d(in_channels=2, out_channels=1, kernel_size=1, padding=0),
+        #     nn.BatchNorm3d(num_features=1),
+        #     nn.PReLU()
+        # )
         self.hidden = [None]
         self.tmp_hidden = [None]
         self.old_pred = [None, None]
@@ -368,7 +368,7 @@ class Deeplabv3Plus_gruV2(nn.Module):
         out, self.hidden = self.gru(out, self.hidden[-1])
         self.hidden = [tuple(state.detach() for state in i) for i in self.hidden]
         out = out[0]
-        out = self.conv3d(out)
+        # out = self.conv3d(out)
         out = out[:, -1, :, :, :]  # <--- not to sure if 0 or -1
         self.old_pred[0] = self.old_pred[1]  # oldest at 0 position
         self.old_pred[1] = out.unsqueeze(1).detach()  # newest at 1 position

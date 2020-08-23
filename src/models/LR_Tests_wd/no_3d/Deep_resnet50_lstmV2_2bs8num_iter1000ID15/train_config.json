@@ -1,0 +1,1 @@
+{"model": "Deep_resnet50_lstmV2_2", "weight_decay": 0, "batch_size": 8, "num_epochs": 1000, "evaluation_steps": 2, "loss": "SoftDice", "save_folder_path": "src/models/LR_Tests_wd/no_3d/", "track_ID": 15, "unique_name": "Deep_resnet50_lstmV2_2bs8num_iter1000ID15", "save_files_path": "src/models/LR_Tests_wd/no_3d/Deep_resnet50_lstmV2_2bs8num_iter1000ID15"}
