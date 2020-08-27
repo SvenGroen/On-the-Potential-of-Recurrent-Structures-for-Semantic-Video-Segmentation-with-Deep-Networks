@@ -12,21 +12,23 @@ from torch import optim
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 from src.dataset.YT_Greenscreen import YT_Greenscreen
-from src.utils import initiator, time_logger, AverageMeter, stack, eval_metrics
+from src.utils import initiator, time_logger, AverageMeter, stack, eval_metrics, fast_hist
 from src.utils.visualizations import visualize_logger
-# from src.utils.metrics import get_gpu_memory_map
+
+from src.utils.metrics import get_gpu_memory_map
 
 
 class GridTrainer:
     def __init__(self, config, train=True, batch_size=None, load_from_checkpoint=True):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.config = config
-        self.model, self.weight_decay, self.lr_boundarys = initiator.initiate_model(self.config)
+        self.model, self.weight_decay, self.lr_boundarys, self.detach_interval = initiator.initiate_model(self.config)
         self.model = self.model.to(self.device)
         self.criterion = initiator.initiate_criterion(self.config)
         # self.logger = initiator.initiate_logger(self.lr_boundarys[0])
         self.logger = defaultdict(list)
         self.metric_logger = defaultdict(list)
+
         self.batch_size = self.config["batch_size"] if batch_size is None else batch_size
         self.time_logger = time_logger.TimeLogger(restart_time=60 * 60 * 1.2)  # 60 * 60 * 1.2
         self.dataset = YT_Greenscreen(train=train, start_index=0,
@@ -163,14 +165,25 @@ class GridTrainer:
 
                 pred = self.model(images)
                 loss = self.criterion(pred, labels)
-
+                memory = get_gpu_memory_map() if torch.cuda.is_available() else 0
                 self.optimizer.zero_grad()
-                loss.backward()  # <--------------------------------------------------------------------------------
+                if self.detach_interval == 1:
+                    loss.backward(retain_graph=False)
+                    self.model.detach()
+                elif i > 0 and i % self.detach_interval == 0:
+                    loss.backward(retain_graph=False)  # <---------------------------------------------------------
+                    self.model.detach()
+                else:
+                    loss.backward(retain_graph=True)
                 self.optimizer.step()
                 self.scheduler.step()
                 self.logger["running_loss"] += loss.item() * images.size(0)
+                self.logger["memory"].append(memory)
                 print("Loss: {}, running_loss: {}".format(loss, self.logger["running_loss"]))
 
+            with open(str(config["save_files_path"] + "/memory.txt"), "w") as txt_file:
+                max_mem = np.max(np.array(self.logger["memory"]))
+                txt_file.write(f"Max cuda memory used in epoch {epoch}: {max_mem}\n")
             self.logger["loss"].append(self.logger["running_loss"] / len(self.dataset))
             visualize_logger(self.logger, self.config["save_files_path"])
             self.save_checkpoint()
@@ -181,9 +194,12 @@ class GridTrainer:
                 print("intermediate")
                 self.intermediate_eval(num_eval_steps=29 * 6, random_start=True, final=False)
 
-    def eval(self, random_start=True, eval_length=29 * 4, save_file_path=None):
+    def eval(self, random_start=True, eval_length=29 * 4, save_file_path=None, load_most_recent=True):
         import time
-        self.load_after_restart()  # load the most recent log data
+        if load_most_recent:
+            self.load_after_restart()  # load the most recent log data
+        else:
+            self.logger["epochs"] = [-1]
         self.dataset.set_start_index(0)
         running_loss = 0
         with torch.no_grad():
@@ -203,6 +219,12 @@ class GridTrainer:
             out_vid = cv2.VideoWriter(
                 str(out_folder) + "/intermediate_{}_ep{}.mp4".format(mode, self.logger["epochs"][-1]), fourcc, 29,
                 (1536, 270))
+            flickering = 0
+            flickering_sum = 0
+            flickering_img_size = 0
+            fp = 0
+            flickering_sum2 = 0
+            fip = 0
             for i, batch in enumerate(loader):
                 start = time.time()
                 idx, video_start, (images, labels) = batch
@@ -219,9 +241,25 @@ class GridTrainer:
                 overall_acc, avg_per_class_acc, avg_jacc, avg_dice = eval_metrics(outputs.to("cpu"),
                                                                                   labels.to("cpu"),
                                                                                   num_classes=2)
+
                 running_loss += loss.item() * images.size(0)
-                # if torch.cuda.is_available:
-                #     metrics["cuda_mem"].update(metrics.get)
+                diff_img = (outputs != labels) * (labels + 1)
+                if i > 0:
+                    flickering = torch.sum(diff_img != old_out)
+                    flickering_sum += flickering
+                    flickering_img_size += outputs.shape[1] * outputs.shape[2]
+                    fp = float(flickering_sum) / float(flickering_img_size)
+                    flickering2 = torch.sum(outputs != old_out2)
+                    flickering_sum2 += flickering2
+                    fip=float(flickering_sum2)/float(flickering_img_size)
+
+
+                print(flickering, flickering_sum, flickering_img_size, fp, fip)
+                old_out = diff_img
+                old_out2 = outputs
+                metrics["FP"].update(fp)
+                metrics["FIP"].update(fip)
+                metrics["hist"].update(fast_hist(outputs.to("cpu"), labels.to("cpu"), num_classes=2))
                 metrics["Time_taken"].update(end)
                 metrics["Mean IoU"].update(avg_jacc)
                 metrics["Pixel Accuracy"].update(overall_acc)
@@ -264,7 +302,7 @@ if __name__ == "__main__":
     - num epochs
     - evaluation_steps
     '''
-    model = "Deep_mobile_lstmV3"
+    model = "Deep_mobile_lstmV2_2"
     weight_decay = 1e-8
     batch_size = 6
     track_id = 00

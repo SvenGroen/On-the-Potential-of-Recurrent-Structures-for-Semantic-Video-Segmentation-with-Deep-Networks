@@ -5,6 +5,7 @@ from src.utils import SegLoss
 
 
 def initiate_model(config):
+    detach_interval = 1
     if config["model"] == "Deep+_mobile":
         net = Deeplabv3Plus_base(backbone="mobilenet")
         upper_lr_bound = 1e-2
@@ -35,16 +36,22 @@ def initiate_model(config):
         upper_lr_bound = 1e-3
         lower_lr_bound = upper_lr_bound / 6
         wd = 1e-6
-    elif config["model"] == "Deep_mobile_lstmV5_1":
-        net = Deeplabv3Plus_lstmV5(backbone="mobilenet", keep_hidden=True)
-        upper_lr_bound = 1e-2
-        lower_lr_bound = upper_lr_bound / 6
-        wd = 0
-    elif config["model"] == "Deep_mobile_lstmV5_2":
+    elif config["model"] == "Deep_mobile_lstmV5":
         net = Deeplabv3Plus_lstmV5(backbone="mobilenet", keep_hidden=False)
         upper_lr_bound = 6e-3
         lower_lr_bound = upper_lr_bound / 6
         wd = 1e-8
+    elif config["model"] == "Deep_mobile_lstmV6":
+        net = Deeplabv3Plus_lstmV1(backbone="mobilenet")
+        upper_lr_bound = 8e-3
+        lower_lr_bound = upper_lr_bound / 6
+        wd = 1e-4
+        detach_interval = 3
+    elif config["model"] == "Deep_mobile_lstmV7":
+        net = Deeplabv3Plus_lstmV7(backbone="mobilenet")
+        upper_lr_bound = 5e-3
+        lower_lr_bound = upper_lr_bound / 6
+        wd = 1e-4
     elif config["model"] == "Deep_mobile_gruV1":
         net = Deeplabv3Plus_gruV1(backbone="mobilenet")
         upper_lr_bound = 5e-3
@@ -130,11 +137,12 @@ def initiate_model(config):
         lower_lr_bound = None
         upper_lr_bound = None
         wd = 0
+
     net.train()
     for param in net.base.backbone.parameters():
         param.requires_grad = False
 
-    return net, wd, (lower_lr_bound, upper_lr_bound)
+    return net, wd, (lower_lr_bound, upper_lr_bound), detach_interval
 
 
 def initiate_criterion(config):

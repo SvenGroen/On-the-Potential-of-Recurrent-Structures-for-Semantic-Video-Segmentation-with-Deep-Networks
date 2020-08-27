@@ -4,23 +4,24 @@ from subprocess import call
 
 import torch
 
-models = ["Deep+_mobile", "Deep_mobile_lstmV1", "Deep_mobile_lstmV2_1", "Deep_mobile_lstmV2_2", "Deep_mobile_lstmV3",
-          "Deep_mobile_lstmV4",
-          "Deep_mobile_lstmV5_1", "Deep_mobile_lstmV5_2", "Deep_mobile_gruV1", "Deep_mobile_gruV2", "Deep_mobile_gruV3",
-          "Deep_mobile_gruV4", "Deep+_resnet50", "Deep_resnet50_lstmV1", "Deep_resnet50_lstmV2_1",
-          "Deep_resnet50_lstmV2_2", "Deep_resnet50_lstmV3",
-          "Deep_resnet50_lstmV4", "Deep_resnet50_gruV1", "Deep_resnet50_gruV2", "Deep_resnet50_gruV3",
-          "Deep_resnet50_gruV4"]
+models = ["Deep+_mobile"]
+#, "Deep_mobile_lstmV1", "Deep_mobile_lstmV2_1", "Deep_mobile_lstmV2_2", "Deep_mobile_lstmV3",
+          # "Deep_mobile_lstmV4",
+          # "Deep_mobile_lstmV5_1", "Deep_mobile_lstmV5_2", "Deep_mobile_gruV1", "Deep_mobile_gruV2", "Deep_mobile_gruV3",
+          # "Deep_mobile_gruV4", "Deep+_resnet50", "Deep_resnet50_lstmV1", "Deep_resnet50_lstmV2_1",
+          # "Deep_resnet50_lstmV2_2", "Deep_resnet50_lstmV3",
+          # "Deep_resnet50_lstmV4", "Deep_resnet50_gruV1", "Deep_resnet50_gruV2", "Deep_resnet50_gruV3",
+          # "Deep_resnet50_gruV4"]
 configs = []
 for model in models:
     config = {}
     config["model"] = model
     config["weight_decay"] = 0
     config["batch_size"] = 8
-    config["num_epochs"] = 1000
+    config["num_epochs"] = 100
     config["evaluation_steps"] = 2
     config["loss"] = "SoftDice"
-    config["save_folder_path"] = "src/models/LR_Tests_wd/no_3d/"  # bs_" + str(config["batch_size"])
+    config["save_folder_path"] = "src/models/LR_Tests_wd/tests/"  # bs_" + str(config["batch_size"])
 
     # print(config)
     configs.append(config)

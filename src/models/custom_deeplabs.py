@@ -3,8 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from src.models.recurrent_modules import *
 from src.models.network import *
-from src.models.network._deeplab import DeepLabHeadV3PlusLSTM, DeepLabHeadV3PlusGRU
-
+from src.models.network._deeplab import DeepLabHeadV3PlusLSTM, DeepLabHeadV3PlusGRU, DeepLabHeadV3PlusLSTMV2
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -17,6 +16,8 @@ class Deeplabv3Plus_base(nn.Module):
             self.base = deeplabv3plus_mobilenet(num_classes=2, pretrained_backbone=True)
         elif backbone == "resnet50":
             self.base = deeplabv3plus_resnet50(num_classes=2, pretrained_backbone=True)
+    def detach(self):
+        pass
 
     def reset(self):
         pass
@@ -32,6 +33,10 @@ class Deeplabv3Plus_base(nn.Module):
 
 
 # --- LSTMs ---
+
+
+
+
 class Deeplabv3Plus_lstmV1(nn.Module):
     def __init__(self, backbone="mobilenet"):
         super().__init__()
@@ -45,6 +50,9 @@ class Deeplabv3Plus_lstmV1(nn.Module):
                              return_all_layers=False)
         self.hidden = None
         self.tmp_hidden = None
+
+    def detach(self):
+        self.hidden = [tuple(state.detach() for state in i) for i in self.hidden]
 
     def reset(self):
         self.hidden = None
@@ -77,7 +85,7 @@ class Deeplabv3Plus_lstmV2(nn.Module):
 
         self.lstm = ConvLSTM(input_dim=2, hidden_dim=[2], kernel_size=(3, 3), num_layers=1, batch_first=True,
                              bias=True,
-                             return_all_layers=False)
+                             return_all_layers=True)
         # self.conv3d = nn.Sequential(
         #     nn.Conv3d(in_channels=3, out_channels=1, kernel_size=1, padding=0, stride=1),
         #     nn.BatchNorm3d(num_features=1),
@@ -94,6 +102,9 @@ class Deeplabv3Plus_lstmV2(nn.Module):
         self.tmp_hidden = None
         self.tmp_old_pred = [None, None]
         self.old_pred = [None, None]
+
+    def detach(self):
+        pass
 
     def reset(self):
         self.hidden = None
@@ -129,7 +140,7 @@ class Deeplabv3Plus_lstmV2(nn.Module):
         out, self.hidden = self.lstm(out, self.hidden)
         out = out[0]
         # if self.activate_3d:
-            # out = self.conv3d(out)
+        # out = self.conv3d(out)
 
         out = out[:, -1, :, :, :]  # <--- not to sure if 0 or -1
         self.hidden = [tuple(state.detach() for state in i) for i in self.hidden]
@@ -152,6 +163,9 @@ class Deeplabv3Plus_lstmV3(nn.Module):
         self.base.classifier = DeepLabHeadV3PlusLSTM(in_channels, low_level_channels, 2, [12, 24, 36])
         self.tmp_old_pred = [None, None]
         self.tmp_hidden = None
+
+    def detach(self):
+        pass
 
     def reset(self):
         self.base.classifier.hidden = None
@@ -187,9 +201,13 @@ class Deeplabv3Plus_lstmV4(nn.Module):
             self.base = deeplabv3plus_resnet50(num_classes=2, pretrained_backbone=True)
             in_channels = 2048
             low_level_channels = 256
-        self.base.classifier = DeepLabHeadV3PlusLSTM(in_channels, low_level_channels, 2, [12, 24, 36], store_previous=True)
+        self.base.classifier = DeepLabHeadV3PlusLSTM(in_channels, low_level_channels, 2, [12, 24, 36],
+                                                     store_previous=True)
         self.tmp_old_pred = [None, None]
         self.tmp_hidden = None
+
+    def detach(self):
+        pass
 
     def reset(self):
         self.base.classifier.hidden = None
@@ -232,6 +250,9 @@ class Deeplabv3Plus_lstmV5(nn.Module):
         self.keep_hidden = keep_hidden
         self.tmp_old_pred = [None, None]
         self.old_pred = [None, None]
+
+    def detach(self):
+        pass
 
     def reset(self):
         self.hidden = None
@@ -276,6 +297,46 @@ class Deeplabv3Plus_lstmV5(nn.Module):
         return out
 
 
+class Deeplabv3Plus_lstmV7(nn.Module):
+    def __init__(self, backbone="mobilenet"):
+        super().__init__()
+        if backbone == "mobilenet":
+            self.base = deeplabv3plus_mobilenet(num_classes=2, pretrained_backbone=True)
+            in_channels = 320
+            low_level_channels = 24
+        elif backbone == "resnet50":
+            self.base = deeplabv3plus_resnet50(num_classes=2, pretrained_backbone=True)
+            in_channels = 2048
+            low_level_channels = 256
+        self.base.classifier = DeepLabHeadV3PlusLSTMV2(in_channels, low_level_channels, 2, [12, 24, 36],
+                                                     store_previous=True)
+        self.tmp_old_pred = [None, None]
+        self.tmp_hidden = None
+
+    def detach(self):
+        pass
+
+    def reset(self):
+        self.base.classifier.hidden = None
+        self.base.classifier.old_pred = [None, None]
+
+    def start_eval(self):
+        self.tmp_hidden = self.base.classifier.hidden
+        self.tmp_old_pred = self.base.classifier.old_pred
+        self.reset()
+
+    def end_eval(self):
+        self.base.classifier.hidden = self.tmp_hidden
+        self.base.classifier.old_pred = self.tmp_old_pred
+        self.tmp_hidden = None
+        self.tmp_old_pred = [None, None]
+
+    def forward(self, x, *args):
+        input_shape = x.shape[-2:]
+        out = self.base(x)
+        out = F.interpolate(out, size=input_shape, mode='bilinear', align_corners=False)
+        return out
+
 # --- GRU ---
 class Deeplabv3Plus_gruV1(nn.Module):
     def __init__(self, backbone="mobilenet"):
@@ -289,6 +350,9 @@ class Deeplabv3Plus_gruV1(nn.Module):
                            dtype=torch.FloatTensor, batch_first=True, bias=True, return_all_layers=True)
         self.hidden = [None]
         self.tmp_hidden = None
+
+    def detach(self):
+        pass
 
     def reset(self):
         self.hidden = [None]
@@ -335,6 +399,9 @@ class Deeplabv3Plus_gruV2(nn.Module):
         self.tmp_hidden = [None]
         self.old_pred = [None, None]
         self.tmp_old_pred = [None, None]
+
+    def detach(self):
+        pass
 
     def reset(self):
         self.hidden = [None]
@@ -393,6 +460,8 @@ class Deeplabv3Plus_gruV3(nn.Module):
         self.tmp_hidden = None
         self.classifier.old_pred = [None, None]
         self.tmp_old_pred = [None, None]
+    def detach(self):
+        pass
 
     def reset(self):
         self.classifier.hidden = [None]
@@ -436,6 +505,8 @@ class Deeplabv3Plus_gruV4(nn.Module):
         self.tmp_hidden = None
         self.classifier.old_pred = [None, None]
         self.tmp_old_pred = [None, None]
+    def detach(self):
+        pass
 
     def reset(self):
         self.classifier.hidden = [None]

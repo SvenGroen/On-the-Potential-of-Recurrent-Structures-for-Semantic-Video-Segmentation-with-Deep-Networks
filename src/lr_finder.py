@@ -9,6 +9,7 @@ from src.dataset.YT_Greenscreen import YT_Greenscreen
 from src.gridtrainer import GridTrainer
 import matplotlib.pyplot as plt
 from src.utils.metrics import get_gpu_memory_map
+
 # -cfg src\models\LR_Tests\bs_6\Deep_resnet50_gruV4bs6num_iter100ID19/train_config.json
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -31,21 +32,22 @@ for wd in weight_decays:
     trainer = GridTrainer(config, load_from_checkpoint=False, batch_size=config["batch_size"])
     model = trainer.model
     criterion = trainer.criterion
-    # val_dataset = YT_Greenscreen(train=False, start_index=0, batch_size=wd)  # batch_size=trainer.config["batch_size"])
-    # val_loader = DataLoader(val_dataset, val_dataset.batch_size, shuffle=False)
+    val_dataset = YT_Greenscreen(train=False, start_index=0,
+                                 batch_size=config["batch_size"])  # batch_size=trainer.config["batch_size"])
+    val_loader = DataLoader(val_dataset, val_dataset.batch_size, shuffle=False)
     optimizer = optim.Adam(model.parameters(), lr=1e-9, weight_decay=wd)
     lr_finder = LRFinder(model, optimizer, criterion, device=device)
-    sys.stderr.write(f"\nMemory used(1): {get_gpu_memory_map()}")
+    # sys.stderr.write(f"\nMemory used(1): {get_gpu_memory_map()}")
     try:
-        lr_finder.range_test(trainer.loader, end_lr=10, num_iter=config["num_epochs"])  # , val_loader=val_loader
+        lr_finder.range_test(trainer.loader, val_loader=val_loader, end_lr=10, num_iter=config["num_epochs"])  #
         historys.append(lr_finder.history)
-        # lr_finder.plot(skip_start=0, skip_end=0)
+        lr_finder.plot(skip_start=0, skip_end=0)
     except RuntimeError as e:
         if 'out of memory' in str(e):
             print(f'| WARNING: ran out of memory for batch size {wd}')
         torch.cuda.empty_cache()
         weight_decays.remove(wd)
-    sys.stderr.write(f"\nMemory used(2): {get_gpu_memory_map()}\n")
+    # sys.stderr.write(f"\nMemory used(2): {get_gpu_memory_map()}\n")
     lr_finder.reset()
 fig = plt.figure(figsize=(15, 10))
 ax = fig.add_subplot(111)
