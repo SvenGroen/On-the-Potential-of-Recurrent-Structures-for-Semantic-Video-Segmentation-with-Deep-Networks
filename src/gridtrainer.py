@@ -114,6 +114,8 @@ class GridTrainer:
         from subprocess import call
         job_name = "IE" + str(self.config["track_ID"]).zfill(2) + "e" + str(self.logger["epochs"][-1])
         VRAM = 3.8
+        if "V4" in self.config["model"]:
+            VRAM = "5G"
         recallParameter = "qsub -N " + job_name + self.config["model"] + ' -l nv_mem_free=' + str(VRAM) \
                           + " -o " + str(self.config["save_files_path"]) + "/log_files/" + job_name + ".o$JOB_ID" \
                           + " -e " + str(self.config["save_files_path"]) + "/log_files/" + job_name + ".e$JOB_ID" \
@@ -206,6 +208,8 @@ class GridTrainer:
             for i, batch in enumerate(loader):
                 start = time.time()
                 idx, video_start, (images, labels) = batch
+                if torch.sum(idx == 0) > 1:
+                    sys.stderr.write(f"\nlen: {len(self.dataset)}; eval_length: {eval_length}; idx: {idx}\n")
                 images, labels = (images.to(self.device), labels.to(self.device))
                 if torch.any(video_start.bool()):
                     self.model.reset()

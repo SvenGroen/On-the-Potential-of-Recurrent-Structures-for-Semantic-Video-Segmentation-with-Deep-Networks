@@ -7,7 +7,7 @@ https://github.com/JunMa11/SegLoss
 SoftDiceLoss was used.
 
 Metrics:
-
+https://github.com/kevinzakka/pytorch-goodies/blob/master/metrics.py
 
 DeeplabV3+:  
 https://github.com/VainF/DeepLabV3Plus-Pytorch  
