@@ -8,8 +8,10 @@ def initiate_model(config):
     detach_interval = 1
     if config["model"] == "Deep+_mobile":
         net = Deeplabv3Plus_base(backbone="mobilenet")
+        # upper_lr_bound = 1e-2
+        # lower_lr_bound = upper_lr_bound / 6
         upper_lr_bound = 1e-2
-        lower_lr_bound = upper_lr_bound / 6
+        lower_lr_bound = 8e-6
         wd = 1e-6
     elif config["model"] == "Deep_mobile_lstmV1":
         net = Deeplabv3Plus_lstmV1(backbone="mobilenet")
@@ -74,8 +76,8 @@ def initiate_model(config):
         wd = 1e-6
     elif config["model"] == "Deep+_resnet50":
         net = Deeplabv3Plus_base(backbone="resnet50")
-        upper_lr_bound = 1e-2
-        lower_lr_bound = upper_lr_bound / 6
+        upper_lr_bound = 1e-4
+        lower_lr_bound = 8e-6
         wd = 1e-4
     elif config["model"] == "Deep_resnet50_lstmV1":
         net = Deeplabv3Plus_lstmV1(backbone="resnet50")
