@@ -50,7 +50,7 @@ for i, config in enumerate(configs):
     # print(config)
     from subprocess import call
 
-    config["track_ID"] = 11
+    config["track_ID"] = i
     unique_name = config["model"] + "_wd" + format(config["weight_decay"], ".0e") + "bs" + str(
         config["batch_size"]) + "num_ep" \
                   + str(config["num_epochs"]) + "ev" + str(config["evaluation_steps"]) + "ID" + str(config["track_ID"])
