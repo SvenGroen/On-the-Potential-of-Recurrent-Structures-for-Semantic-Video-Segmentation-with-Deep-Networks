@@ -65,7 +65,6 @@ for folder in model_path.glob("*"):
         label += pattern.group(0)
 
     print(label)
-
     for i in ["train", "val"]:
         metric_results[i][-1]["Label"] = label
         metric_results[i][-1]["Model"] = str(config["model"]) + "_" + str(config["track_ID"])
@@ -78,7 +77,7 @@ for mode in ["train", "val"]:
     data = defaultdict(list)
     for i, category in enumerate(results[0][mode][-1].keys()):
         for model in results:
-            if category != "curr_epoch":
+            if category not in ["curr_epoch", "hist"]:
                 if isinstance(model[mode][-1][category], str):
                     data[category].append(model[mode][-1][category])
                 elif torch.is_tensor(model[mode][-1][category].avg):
@@ -98,7 +97,7 @@ for mode in ["train", "val"]:
     categorys = ["Mean IoU", "Pixel Accuracy", "Per Class Accuracy", "Dice", "num_params",
                  "Time_taken"]  # , "time_in_ms"
     metrics = ["Mean IoU", "Pixel Accuracy", "Per Class Accuracy", "Dice", "FIP",
-               "FP"]  # <-- USE LATER WHEN NEW METRICS FILE
+               "FP"]  # <--------------------------------------------------------------------------------------------------------USE LATER WHEN NEW METRICS FILE
     plots = []
 
     # f, ax = plt.subplots(1, 2, figsize=(30, 10))
@@ -140,3 +139,32 @@ for mode in ["train", "val"]:
 result = pd.concat(dfs)
 result.round(4).to_csv(model_path / "Metric_Results" / "metric_results.csv", sep=";")
 result.round(4).reset_index().to_json(model_path / "Metric_Results" / "metric_results.json")
+
+train = result["Mode"] == "train"
+mobile = result["model_class"] == "mobile"
+resnet = result["model_class"] == "resnet"
+metrics = ["Mean IoU", "Pixel Accuracy", "Per Class Accuracy", "Dice"]
+df_resnet = pd.DataFrame(result[resnet], columns=["Label", "Mode"] + metrics)
+df_mobile = pd.DataFrame(result[mobile], columns=["Label", "Mode"] + metrics)
+df_mobile = df_mobile.set_index(["Label", "Mode"]).unstack()
+df_resnet = df_resnet.set_index(["Label", "Mode"]).unstack()
+print(df_mobile.round(4).to_latex(index=True, multirow=True, multicolumn=True))
+print(df_resnet.round(4).to_latex(index=True, multirow=True, multicolumn=True))
+
+df_param = pd.DataFrame(result[train & mobile], columns=["Label", "model_class", "num_params"])
+df_param["percentage"] = df_param["num_params"].pct_change()
+df_param2 = pd.DataFrame(result[train & resnet], columns=["Label", "model_class", "num_params"])
+df_param2["percentage"] = df_param2["num_params"].pct_change()
+df_param = pd.concat([df_param, df_param2])
+df_param = df_param.set_index(["Label", 'model_class']).unstack()
+print(df_param.round(4).to_latex(index=True, multirow=True, multicolumn=True))
+
+
+result["Time_taken"] = result["Time_taken"] * 100
+df_time = pd.DataFrame(result[train & mobile], columns=["Label", "model_class", "Time_taken"])
+df_time["percentage"] = df_time["Time_taken"].pct_change()
+df_time2 = pd.DataFrame(result[train & resnet], columns=["Label", "model_class", "Time_taken"])
+df_time2["percentage"] = df_time2["Time_taken"].pct_change()
+df_time = pd.concat([df_time, df_time2])
+df_time = df_time.set_index(["Label", 'model_class']).unstack()
+print(df_time.round(4).to_latex(index=True, multirow=True, multicolumn=True, float_format=lambda x: f"{x}ms"))

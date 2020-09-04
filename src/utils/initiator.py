@@ -2,6 +2,7 @@ from collections import defaultdict
 
 from src.models.custom_deeplabs import *
 from src.utils import SegLoss
+import torch
 
 
 def initiate_model(config):
@@ -149,11 +150,11 @@ def initiate_model(config):
 
 def initiate_criterion(config):
     if config["loss"] == "SoftDice":
-        criterion = SegLoss.dice_loss.SoftDiceLoss(smooth=0.0001, apply_nonlin=F.softmax)
+        criterion = SegLoss.dice_loss.SoftDiceLoss(smooth=0.0001, apply_nonlin=torch.nn.Softmax(dim=1))
     elif config["loss"] == "Focal":
-        criterion = SegLoss.focal_loss.FocalLoss(smooth=0.0001, apply_nonlin=F.softmax)
+        criterion = SegLoss.focal_loss.FocalLoss(smooth=0.0001, apply_nonlin=torch.nn.Softmax(dim=1))
     elif config["loss"] == "CrossDice":
-        dice = SegLoss.dice_loss.SoftDiceLoss(smooth=0.0001, apply_nonlin=F.softmax)
+        dice = SegLoss.dice_loss.SoftDiceLoss(smooth=0.0001, apply_nonlin=torch.nn.Softmax(dim=1))
         entropy = torch.nn.CrossEntropyLoss()
         criterion = lambda x, y: (dice(x, y) + entropy(x, y)) / 2.
     elif config["loss"] == "CrossEntropy":

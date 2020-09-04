@@ -34,7 +34,7 @@ class GridTrainer:
         self.dataset = YT_Greenscreen(train=train, start_index=0,
                                       batch_size=self.batch_size)
         self.loader = DataLoader(dataset=self.dataset, shuffle=False,
-                                 batch_size=self.batch_size)
+                                 batch_size=self.batch_size, num_workers=6, pin_memory=True)
         self.optimizer = optim.Adam(self.model.parameters(),
                                     lr=self.lr_boundarys[0],
                                     weight_decay=self.weight_decay)
@@ -47,6 +47,7 @@ class GridTrainer:
         # self.scheduler = optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=self.lr_boundarys[1],
         #                                              steps_per_epoch=len(self.loader), epochs=self.config["num_epochs"])
         self._RESTART = False
+        self.cur_idx = self.dataset.start_index
         if load_from_checkpoint:
             self.load_after_restart()
 
@@ -57,6 +58,7 @@ class GridTrainer:
         self.scheduler.load_state_dict(checkpoint["scheduler"])
         self.logger = checkpoint
         self.dataset.start_index = self.logger["batch_index"]
+        self.cur_idx = self.logger["batch_index"]
         self._RESTART = True
         sys.stderr.write(
             "\n--Loading previous checkpoint--\nID: {}\tEpoch: {}\tBatch_idx: {}\n".format(self.config["track_ID"],
@@ -81,7 +83,7 @@ class GridTrainer:
     def save_checkpoint(self):
         self.logger["state_dict"] = self.model.state_dict()
         self.logger["optim_state_dict"] = self.optimizer.state_dict()
-        self.logger["batch_index"] = self.dataset.cur_idx
+        self.logger["batch_index"] = self.cur_idx[-1] + 1
         self.logger["scheduler"] = self.scheduler.state_dict()
         torch.save(self.logger, self.config["save_files_path"] + "/checkpoint.pth.tar")
 
@@ -154,6 +156,7 @@ class GridTrainer:
                     return  # End the script
 
                 idx, video_start, (images, labels) = batch
+                self.cur_idx = idx
                 sys.stderr.write(f"\nCurrent Index: {idx}")
                 images, labels = (images.to(self.device), labels.to(self.device))
                 if torch.any(video_start):
@@ -322,7 +325,7 @@ if __name__ == "__main__":
         "batch_size": batch_size,
         "num_epochs": num_epochs,
         "evaluation_steps": eval_steps,
-        "loss": "CrossDice",
+        "loss": "SoftDice",
         "track_ID": track_id
     }
     Path(config["save_files_path"]).mkdir(parents=True, exist_ok=True)

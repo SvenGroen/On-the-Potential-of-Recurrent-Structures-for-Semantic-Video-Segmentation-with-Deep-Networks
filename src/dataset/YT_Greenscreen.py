@@ -54,7 +54,7 @@ class YT_Greenscreen(data.Dataset):
         self.seed = random.randint(-999, 999)  # makes sure the transformations are applied equally
         self.transform = Segmentation_transform(seed=self.seed)
         self.batch_size = batch_size
-        self.cur_idx = self.start_index
+
         self.zeros_inp = None
         self.zeros_lbl = None
 
@@ -85,7 +85,7 @@ class YT_Greenscreen(data.Dataset):
         inp = self.transform(img)
         random.seed(self.seed)
         lbl = (self.transform(lbl, label=True)).squeeze(0)
-        self.cur_idx = idx
+
         if self.zeros_inp is None or self.zeros_lbl is None:
             self.zeros_inp = torch.zeros_like(inp)
             self.zeros_lbl = torch.zeros_like(lbl).long()
