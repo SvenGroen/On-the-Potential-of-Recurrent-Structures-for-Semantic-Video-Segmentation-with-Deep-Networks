@@ -44,17 +44,16 @@ def hstack(images):
 
 
 class YT_Greenscreen(data.Dataset):
-
-    def __init__(self, train=True, start_index=torch.tensor([0]), batch_size=1):
+    def __init__(self, train=True, start_index=torch.tensor([0]), batch_size=1, seed=0):
         self.train = train
         self.mode = "train" if train else "test"
         with open("src/dataset/data/images/YT_4sec/" + self.mode + "/out_log.json", "r") as json_file:
             self.data = json.load(json_file)
         self.start_index = start_index if isinstance(start_index, int) else start_index[0].item()
-        self.seed = random.randint(-999, 999)  # makes sure the transformations are applied equally
+        self.seed = seed  # makes sure the transformations are applied equally
+        self.cur_idx=self.start_index
         self.transform = Segmentation_transform(seed=self.seed)
         self.batch_size = batch_size
-        self.cur_idx = self.start_index
         self.zeros_inp = None
         self.zeros_lbl = None
 
@@ -76,9 +75,9 @@ class YT_Greenscreen(data.Dataset):
             return 0, False, (self.zeros_inp, self.zeros_lbl)
         video_start = bool(int(self.data["inputs"][idx][1]))
         if video_start:
-            self.transform = Segmentation_transform(seed=random.randint(-999, 999))
+            self.seed = random.randint(0, 999)
+            self.transform = Segmentation_transform(seed=self.seed)
             self.transform.random_apply()
-            self.seed = random.randint(-999, 999)
         img = Image.open(self.data["inputs"][idx][0])
         lbl = Image.open(self.data["labels"][idx][0]).convert("L")
         random.seed(self.seed)
@@ -92,7 +91,6 @@ class YT_Greenscreen(data.Dataset):
         return idx, video_start, (inp, lbl.round().long())
 
     def show(self, num_images, start_idx: int = 0, random_images=False):
-
         out = []
         to_PIL = T.ToPILImage()
         for i in range(num_images):
@@ -102,7 +100,7 @@ class YT_Greenscreen(data.Dataset):
                 indx = start_idx + i
             video_start = bool(int(self.data["inputs"][indx][1]))
             if video_start:
-                self.transform = Segmentation_transform(seed=random.randint(-999, 999))
+                self.transform = Segmentation_transform(seed=random.randint(0, 20))
             img = Image.open(self.data["inputs"][indx][0])
             lbl = Image.open(self.data["labels"][indx][0]).convert("L")
             img = self.transform(img)
@@ -130,8 +128,8 @@ class Segmentation_transform:
         self.apply_transform = False
 
     def __call__(self, img, label=False):
+        random.seed(self.seed)
         if self.apply_transform:
-            random.seed(self.seed)
             if self.hflip:
                 img = TF.hflip(img=img)
             img = TF.affine(img=img, angle=self.angle, translate=self.translate, shear=self.shear, scale=self.scale)
@@ -159,10 +157,10 @@ class Segmentation_transform:
 
     def random_apply(self):
         if random.random() < 0.5:
-            self.angle = random.randint(-15, 15)
+            self.angle = random.randint(-10, 10)
             self.scale = random.choice([1, 1.2, 1.1, 1.3])
         if random.random() > 0.5:
-            self.translate = (random.randint(-15, 15), random.randint(-15, 15))
+            self.translate = (random.randint(-10, 10), random.randint(-10, 10))
             self.scale = random.choice([1, 1.2, 1.1, 1.3])
         if random.random() > 0.5:
             self.shear = 0

@@ -23,7 +23,7 @@ with open(args.config) as js:
     config = json.load(js)
 
 historys = []
-weight_decays = [0, 1e-2, 1e-4, 1e-6, 1e-8]
+weight_decays = [0, 1e-4, 1e-6, 1e-8]
 # weight_decays = [2, 4, 6, 8, 10, 12]
 
 
@@ -35,11 +35,11 @@ for wd in weight_decays:
     val_dataset = YT_Greenscreen(train=False, start_index=0,
                                  batch_size=config["batch_size"])  # batch_size=trainer.config["batch_size"])
     val_loader = DataLoader(val_dataset, val_dataset.batch_size, shuffle=False)
-    optimizer = optim.Adam(model.parameters(), lr=1e-9, weight_decay=wd)
+    optimizer = optim.Adam(model.parameters(), lr=1e-7, weight_decay=wd)
     lr_finder = LRFinder(model, optimizer, criterion, device=device)
     # sys.stderr.write(f"\nMemory used(1): {get_gpu_memory_map()}")
     try:
-        lr_finder.range_test(trainer.loader, val_loader=val_loader, end_lr=10, num_iter=config["num_epochs"])  #
+        lr_finder.range_test(trainer.loader, end_lr=10, num_iter=config["num_epochs"])  # val_loader=val_loader
         historys.append(lr_finder.history)
         lr_finder.plot(skip_start=0, skip_end=0)
     except RuntimeError as e:
