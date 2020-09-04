@@ -1,0 +1,18 @@
+ Start of SGE job 
+
+
+Hostname
+vr4.ikw.uni-osnabrueck.de
+Job-ID:
+625287
+user:
+sgroen
+
+Start
+
+RUNNING:  src/lr_finder.py
+Current Environemt:  torch
+Learning rate search finished. See the graph with {finder_name}.plot()
+Learning rate search finished. See the graph with {finder_name}.plot()
+Learning rate search finished. See the graph with {finder_name}.plot()
+Learning rate search finished. See the graph with {finder_name}.plot()

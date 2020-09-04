@@ -2,13 +2,14 @@ import argparse
 import json
 import sys
 import os
+import torch.multiprocessing as mp
 from pathlib import Path
 from src.gridtrainer import GridTrainer
 
 # print(os.getcwd())
 # sys.stderr.write("\n" + os.getcwd() + "\n")
 
-
+    #mp.set_start_method("spawn")
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-cfg", "--config",
