@@ -293,7 +293,7 @@ class GridTrainer:
         Keeps track if the maximum runtime is exceded and restarts the script if necessary.
         """
         for epoch in tqdm(range(self.get_starting_parameters(what="epoch"), self.config["num_epochs"])):
-            sys.stderr.write(f"\nStarting new epoch: {epoch}\n")
+            sys.stderr.write(f"\nStarting new epoch: {epoch}")
             #memory = 0
             #max_mem = 0
             if not self._RESTART:
@@ -350,6 +350,7 @@ class GridTrainer:
                 self.logger["running_loss"] += loss.item() * images.size(0)
                 print("Loss: {}, running_loss: {}".format(loss, self.logger["running_loss"]))
                 with torch.no_grad():
+                    outputs = torch.argmax(pred, dim=1).float()
                     labels = labels.type(torch.uint8)
                     outputs = outputs.type(torch.uint8)
                     set_out = torch.max(outputs.int())  # can only be in range (0-1)
@@ -477,7 +478,7 @@ class GridTrainer:
                     fipv2 = float(flickering2v2) / float(flickering_img_sizev2)
                 print(fp, fip, "and: ", fpv2, fipv2)
                 print(f"current idx: {idx}\t len(dataset): {len(self.dataset)}")
-                sys.stderr.write(f"\ncurrent idx: {idx}\t len(dataset): {len(self.dataset)}\n")
+                sys.stderr.write(f"\ncurrent idx: {idx}\t len(dataset): {len(self.dataset)}")
                 old_outv2 = diff_imgv2
                 old_out = diff_img
                 old_out2 = outputs
@@ -608,4 +609,4 @@ if __name__ == "__main__":
         json.dump(config, js)
     trainer = GridTrainer(config, load_from_checkpoint=False)
     # trainer.eval(save_file_path=str(config["save_files_path"] + "/intermediate_results"), load_most_recent=False)
-    # trainer.train()
+    trainer.train()

@@ -3,7 +3,7 @@
 #$ -cwd
 #$ -l cuda=1
 #$ -pe default 1
-#$ -l h_rt=08:29:00
+#$ -l h_rt=01:29:00
 #$ -l hostname=!"(*cippy25*|*cippy19*)"
 #$ -l cuda=1
 #$ -m n
