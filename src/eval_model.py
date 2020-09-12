@@ -55,16 +55,16 @@ with open(str(args.path + "/System_information.txt"), "w") as txt_file:
     call("pip list >> System_information.txt", shell=True)
 
 load = torch.cuda.is_available()  # load data only if executed on grid.
-out = args.path + "/intermediate_results" if not args.final else args.path + "/final_results_recent"
+out = args.path + "/intermediate_results" if not args.final else args.path + "/final_results"
 # First evaluate on Train set and afterwards on validation dataset
-train_trainer = GridTrainer(config=config, train=True, batch_size=4 if not args.final else 1, load_from_checkpoint=load)
-train_trainer.eval(random_start=False if not args.final else False,
+train_trainer = GridTrainer(config=config, train=True, batch_size=1, load_from_checkpoint=load)
+train_trainer.eval(random_start=args.random,
                    eval_length=args.steps if not args.final else len(train_trainer.dataset), save_file_path=out,
-                   load_most_recent=load, checkpoint="checkpoint.pth.tar", final=args.final) #"best_checkpoint.pth.tar" if args.final else "checkpoint.pth.tar"
-val_trainer = GridTrainer(config=config, train=False, batch_size=4 if not args.final else 1, load_from_checkpoint=load)
-val_trainer.eval(random_start=False if not args.final else False,
+                   load_most_recent=load, checkpoint="checkpoint.pth.tar", final=args.final)
+val_trainer = GridTrainer(config=config, train=False, batch_size=1, load_from_checkpoint=load)
+val_trainer.eval(random_start=args.random,
                  eval_length=args.steps if not args.final else len(val_trainer.dataset), save_file_path=out,
-                 load_most_recent=load, checkpoint="checkpoint.pth.tar", final=args.final) #"best_checkpoint.pth.tar" if args.final else "checkpoint.pth.tar"
+                 load_most_recent=load, checkpoint="checkpoint.pth.tar", final=args.final)
 path = config["save_files_path"] + "/metrics.pth.tar" if not args.final else out + "/metrics.pth.tar"
 metric_logger = torch.load(config["save_files_path"] + "/metrics.pth.tar", map_location=device)
 

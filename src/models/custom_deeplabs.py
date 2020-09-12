@@ -384,17 +384,6 @@ class Deeplabv3Plus_gruV2(nn.Module):
 
         self.gru = ConvGRU(input_size=(270, 512), input_dim=2, hidden_dim=[2], kernel_size=(3, 3), num_layers=1,
                            dtype=torch.FloatTensor, batch_first=True, bias=True, return_all_layers=True)
-        # self.conv3d = nn.Sequential(
-        #     nn.Conv3d(in_channels=3, out_channels=1, kernel_size=1, padding=0, stride=1),
-        #     nn.BatchNorm3d(num_features=1),
-        #     nn.ReLU()
-        # )
-        # self.conv3d = nn.Sequential(
-        #     nn.Conv3d(in_channels=3, out_channels=2, kernel_size=1, padding=0),
-        #     nn.Conv3d(in_channels=2, out_channels=1, kernel_size=1, padding=0),
-        #     nn.BatchNorm3d(num_features=1),
-        #     nn.PReLU()
-        # )
         self.hidden = [None]
         self.tmp_hidden = [None]
         self.old_pred = [None, None]

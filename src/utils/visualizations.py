@@ -41,3 +41,4 @@ def visualize_logger(logger, path):
 
     save_figure(logger["lrs"], y_label="Learning Rate")
     save_figure(logger["loss"], y_label="Loss")
+    save_figure(logger["mious"], y_label="Mean IoU")

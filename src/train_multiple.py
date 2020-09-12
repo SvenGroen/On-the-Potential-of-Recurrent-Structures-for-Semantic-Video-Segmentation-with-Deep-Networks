@@ -27,7 +27,6 @@ models = ["Deep_resnet50_lstmV4"]
 batch_sizes = 8
 num_epochs = 100
 loss = ["SoftDice"]  # "CrossEntropy"
-wds = [0]
 eval_steps = 5
 
 config_paths = []
@@ -40,14 +39,11 @@ for model in models:
     for i in range(len(loss)):
         config = {}
         config["model"] = model
-        config["weight_decay"] = wds[i]
         config["batch_size"] = batch_sizes
         config["num_epochs"] = num_epochs
         config["evaluation_steps"] = eval_steps
         config["loss"] = loss[i]
-        config["save_folder_path"] = "src/models/trained_models/yt_fullV4/"
-
-
+        config["save_folder_path"] = "src/models/trained_models/yt_fullV5/"
         configs.append(config)
 
 # start to call a job for each config file
@@ -56,9 +52,9 @@ for i, config in enumerate(configs):
     from subprocess import call
 
     config["track_ID"] = i
-    unique_name = config["model"] + "_wd" + format(config["weight_decay"], ".0e") + "bs" + str(
-        config["batch_size"]) + "num_ep" \
-                  + str(config["num_epochs"]) + "ev" + str(config["evaluation_steps"]) + "ID" + str(config["track_ID"])
+    unique_name = "ID" + str(config["track_ID"]) + config["model"] \
+                  + "_bs" + str(config["batch_size"]) + "num_ep" \
+                  + str(config["num_epochs"]) + "ev" + str(config["evaluation_steps"])
     config["unique_name"] = unique_name
     config["save_files_path"] = Path(config["save_folder_path"]) / unique_name
 
