@@ -4,12 +4,16 @@ from subprocess import call
 
 import torch
 
+"""
+Starts the lr_finder script. Works like the train_multiple.py script.
+"""
+
 models = ["Deep_mobile_lstmV6", "Deep_mobile_lstmV7", "Deep_mobile_lstmV1", "Deep_mobile_lstmV2",
           "Deep_mobile_lstmV3", "Deep_mobile_lstmV4", "Deep_mobile_lstmV5", "Deep_mobile_gruV1", "Deep_mobile_gruV2", "Deep_mobile_gruV3",
           "Deep_mobile_gruV4", "Deep+_resnet50", "Deep_resnet50_lstmV1", "Deep_resnet50_lstmV2",
           "Deep_resnet50_lstmV3", "Deep_resnet50_lstmV4", "Deep_resnet50_gruV1", "Deep_resnet50_gruV2",
           "Deep_resnet50_gruV3", "Deep_resnet50_gruV4"]
-models=["Deep_resnet50_lstmV5"]
+
 
 configs = []
 for model in models:
@@ -26,7 +30,7 @@ for model in models:
     configs.append(config)
 
 for i, config in enumerate(configs):
-    config["track_ID"] = 22
+    config["track_ID"] = i
     unique_name = config["model"] + "bs" + str(config["batch_size"]) + "num_iter" \
                   + str(config["num_epochs"]) + "ID" + str(config["track_ID"])
     config["unique_name"] = unique_name

@@ -57,13 +57,11 @@ with open(str(args.path + "/System_information.txt"), "w") as txt_file:
 load = torch.cuda.is_available()  # load data only if executed on grid.
 out = args.path + "/intermediate_results" if not args.final else args.path + "/final_results"
 # First evaluate on Train set and afterwards on validation dataset
-train_trainer = GridTrainer(config=config, train=True, batch_size=4 if not args.final else 8, load_from_checkpoint=load,
-                            num_workers=1)
+train_trainer = GridTrainer(config=config, train=True, batch_size=4 if not args.final else 8, load_from_checkpoint=load)
 train_trainer.eval(random_start=args.random if not args.final else False,
                    eval_length=args.steps if not args.final else len(train_trainer.dataset), save_file_path=out,
                    load_most_recent=load)
-val_trainer = GridTrainer(config=config, train=False, batch_size=4 if not args.final else 8, load_from_checkpoint=load,
-                          num_workers=1)
+val_trainer = GridTrainer(config=config, train=False, batch_size=4 if not args.final else 8, load_from_checkpoint=load)
 val_trainer.eval(random_start=args.random if not args.final else False,
                  eval_length=args.steps if not args.final else len(val_trainer.dataset), save_file_path=out,
                  load_most_recent=load)

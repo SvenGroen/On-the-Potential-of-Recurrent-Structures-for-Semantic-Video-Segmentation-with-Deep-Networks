@@ -7,11 +7,25 @@ from pathlib import Path
 from sklearn.model_selection import train_test_split
 import sys
 import shutil
+'''
+PREPROCESSING (2)
+
+This file should be run after "4sec_preprocess.py"
+
+It converts greenscreen videos into its individual frames and replaces the greenscreen parts by a custom background.
+Creates images (RGB), labels (Black-White) and saves the locations in a log json file that also keeps track of when a
+new 4 second video clip starts.
+'''
 
 sys.stderr.write("Start of file\n")
 
 
 def add_noise(image):
+    """
+    adds gaussian noise to an image with mean=0 and std=1
+    :param image: the image to which the noise should be added
+    :return: the image with added noise.
+    """
     row, col, ch = image.shape
     mean = 0
     # var = 0.1
@@ -21,15 +35,17 @@ def add_noise(image):
     noisy = image + gauss
     return noisy
 
-
+# relevant paths
 bgpath_all = Path("src/dataset/data/images/backgrounds/all")
 bg_names = [bg for bg in bgpath_all.glob("*")]
 (Path("src/dataset/data/images/backgrounds/train")).mkdir(parents=True, exist_ok=True)
 (Path("src/dataset/data/images/backgrounds/test")).mkdir(parents=True, exist_ok=True)
 
+# random split background
 train_bg, test_bg = train_test_split(bg_names, train_size=0.8, test_size=0.2, shuffle=True, random_state=12345)
 np.random.seed(12345)
 random.seed(12345)
+
 for split in ["train", "test"]:
     vid_path_inp = Path("src/dataset/data/videos/YT_4sec") / split / "input"
     video_names = [vid.stem for vid in vid_path_inp.glob("*")]
@@ -52,6 +68,7 @@ for split in ["train", "test"]:
     frame_counter = 0
     count_lbl = 0
     out_log = defaultdict(list)
+    # go through all videos
     for i, vid in enumerate(video_names):
         sys.stderr.write("Video: {}".format(vid))
         bgimg = [img for img in bgpath.glob("*")]
@@ -64,6 +81,7 @@ for split in ["train", "test"]:
         print("video: ", vid)
         new_vid_marker = True
         cap_inp = cv2.VideoCapture(str(vid_path_inp / vid) + ".mp4")
+        # open video to extract frames
         while cap_inp.isOpened():
             ret, frame = cap_inp.read()
             out_name = (str(frame_counter).zfill(5) + ".jpg")

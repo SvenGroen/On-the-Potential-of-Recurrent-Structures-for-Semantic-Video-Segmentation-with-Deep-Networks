@@ -14,7 +14,7 @@ def get_change(current, previous):
     if current == previous:
         return 100
     try:
-        return ((current - previous) / previous) * 100.0 +100
+        return ((current - previous) / previous) * 100.0 + 100
     except ZeroDivisionError:
         return float('inf')
 
@@ -27,7 +27,17 @@ df_param2 = pd.DataFrame(results[train & resnet], columns=["Label", "model_class
 df_param2["percentage"] = df_param2["num_params"].pct_change()
 
 df_param = pd.concat([df_param, df_param2])
-df_param = df_param.set_index(["Label", 'model_class']).unstack()
+df_param = df_param.rename(columns={"num_params": "absolute"})
+df_param = df_param.melt(id_vars=["Label", "model_class"],
+                         value_vars=["percentage", "absolute"]).reset_index()  # pivot wide to long
+df_param = pd.DataFrame(
+    df_param.pivot_table(index=["Label", "variable"], columns="model_class", values="value").to_records())
+# df_param = pd.wide_to_long(df_param,)
+print(df_param)
+
+df_param = df_param.set_index(["Label", 'variable']).unstack()
+
+print(df_param.round(2).to_latex(index=True, multirow=False, multicolumn=False,float_format=lambda x : "{:,}".format(x)))
 
 
 def human_format(num):
@@ -46,5 +56,12 @@ df_time["percentage"] = df_time["Time_taken"].pct_change()
 df_time2 = pd.DataFrame(results[train & resnet], columns=["Label", "model_class", "Time_taken"])
 df_time2["percentage"] = df_time2["Time_taken"].pct_change()
 df_time = pd.concat([df_time, df_time2])
-df_time = df_time.set_index(["Label", 'model_class']).unstack()
-print(df_time.round(4).to_latex(index=True, multirow=True, multicolumn=True, float_format=lambda x: f"{x}ms"))
+
+df_time = df_time.rename(columns={"Time_taken": "absolute"})
+df_time = df_time.melt(id_vars=["Label", "model_class"],
+                         value_vars=["percentage", "absolute"]).reset_index()  # pivot wide to long
+df_time = pd.DataFrame(
+df_time.pivot_table(index=["Label", "variable"], columns="model_class", values="value").to_records())
+
+df_time = df_time.set_index(["Label", "variable"]).unstack()
+print(df_time.round(4).to_latex(index=True, multirow=False, multicolumn=False, float_format=lambda x: f"{x}ms"))

@@ -8,8 +8,18 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import torch
 
+"""
+Extracts the evaluation results from all metrics.pth.tar files in a directory of trained models and displays
+"""
+
 
 def get_change(current, previous):
+    """
+    calculates the percentage change
+    :param current: current value
+    :param previous: base value
+    :return: change of current to previous in percentage
+    """
     if current == previous:
         return 0
     try:
@@ -41,20 +51,24 @@ def autolabel(rects, ax, percentage=True, base=None):
                     ha='center', va='bottom')
 
 
-model_path = Path("src/models/trained_models/yt_fullV1")
+# path where the models are saved
+model_path = Path("src/models/trained_models/yt_fullV4")
 (model_path / "Metric_Results").mkdir(parents=True, exist_ok=True)
 
 results = []
 for folder in model_path.glob("*"):
-    if "Metric" in str(folder):
+    if "Metric" in str(folder) or "lstmV6" in str(folder):
         continue
     if not os.path.isdir(folder):
         continue
     eval_folder = folder / "final_results"
 
-    metric_results = torch.load(folder / "metrics.pth.tar", map_location="cpu")
+    print(folder)
+    metric_results = torch.load(folder / "final_results_recent/metrics.pth.tar", map_location="cpu",)
     with open(folder / "train_config.json") as js:
         config = json.load(js)
+
+    # create a label for better readability in the graphs
     pattern = re.search("V[1-9](_[1-9])?", config["model"])
     label = "base"
     if "lstm" in config["model"]:
@@ -64,14 +78,13 @@ for folder in model_path.glob("*"):
     if pattern:
         label += pattern.group(0)
 
-    print(label)
     for i in ["train", "val"]:
         metric_results[i][-1]["Label"] = label
         metric_results[i][-1]["Model"] = str(config["model"]) + "_" + str(config["track_ID"])
         metric_results[i][-1]["model_class"] = "mobile" if "mobile" in str(config["model"]) else "resnet"
 
     results.append(metric_results)
-
+# create pandas dataframe and extract the last metric results from the last evaluation.
 dfs = []
 for mode in ["train", "val"]:
     data = defaultdict(list)
@@ -87,9 +100,6 @@ for mode in ["train", "val"]:
     df = pd.DataFrame.from_dict(data)
     df["Mode"] = mode
     dfs.append(df)
-    print(df)
-
-    # df["time_in_ms"] = df["time_taken"] * 1000
 
     mobile_df = df[df["model_class"] == "mobile"]
     resnet_df = df[df["model_class"] != "mobile"]
@@ -99,31 +109,29 @@ for mode in ["train", "val"]:
     metrics = ["Mean IoU", "Pixel Accuracy", "Per Class Accuracy", "Dice", "FIP",
                "FP"]  # <--------------------------------------------------------------------------------------------------------USE LATER WHEN NEW METRICS FILE
     plots = []
-
-    # f, ax = plt.subplots(1, 2, figsize=(30, 10))
-    # ax[0].bar(mobile_df["Label"], mobile_df["Jaccard"])
-    # ax[1].bar(mobile_df["Label"], mobile_df["time_in_ms"])
     fontdict = {'fontsize': 30,
                 'fontweight': 1,
                 'verticalalignment': 'baseline',
                 'horizontalalignment': "center"}
-    tmp = [(0, 0), (0, 1), (1, 0), (1, 1), (0, 2), (1, 2)]
 
+    # create one Matplot figure with multiple bar char
+    tmp = [(0, 0), (0, 1), (1, 0), (1, 1), (0, 2), (1, 2)]
     for name, df in [("mobile", mobile_df), ("resnet", resnet_df)]:  # ,
         (model_path / "Metric_Results" / name).mkdir(parents=True, exist_ok=True)
-        f, ax = plt.subplots(2, 3, figsize=(50, 20))
-        for pos, category in zip(tmp, categorys):
+        f, ax = plt.subplots(2, 4, figsize=(50, 20))
+        for pos, category in zip(tmp, metrics):
             ax[pos].set_ylim([0, 1])
             ax[pos].bar(df["Label"], df[category])
             ax[pos].axhline(y=float(df[category][df["Label"] == "base"]), xmin=-0, xmax=1, color="r")
             ax[pos].set_title(category, fontdict=fontdict)
             f.savefig(model_path / "Metric_Results" / name / str(name + "_" + mode + ".png"))
         plt.close(fig=f)
-    # plt.show()
     bars = []
+
+    # create individual bar plots with more details
     for name, df in [("mobile", mobile_df), ("resnet", resnet_df)]:
         df = df.round(4)
-        for category in categorys:
+        for category in metrics:
             base_performance = float(df[category][df["Label"] == "base"])
             f_new, ax_new = plt.subplots(figsize=(50, 20))
             bar = ax_new.bar(df["Label"], df[category])
@@ -139,6 +147,8 @@ for mode in ["train", "val"]:
 result = pd.concat(dfs)
 result.round(4).to_csv(model_path / "Metric_Results" / "metric_results.csv", sep=";")
 result.round(4).reset_index().to_json(model_path / "Metric_Results" / "metric_results.json")
+
+# create latex tables based on pandas Dataframes (need to be adjusted)
 
 train = result["Mode"] == "train"
 mobile = result["model_class"] == "mobile"
@@ -158,7 +168,6 @@ df_param2["percentage"] = df_param2["num_params"].pct_change()
 df_param = pd.concat([df_param, df_param2])
 df_param = df_param.set_index(["Label", 'model_class']).unstack()
 print(df_param.round(4).to_latex(index=True, multirow=True, multicolumn=True))
-
 
 result["Time_taken"] = result["Time_taken"] * 100
 df_time = pd.DataFrame(result[train & mobile], columns=["Label", "model_class", "Time_taken"])

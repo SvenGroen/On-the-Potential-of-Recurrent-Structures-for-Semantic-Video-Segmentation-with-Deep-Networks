@@ -8,7 +8,10 @@ from torch.utils.data import DataLoader
 from src.dataset.YT_Greenscreen import YT_Greenscreen
 from src.gridtrainer import GridTrainer
 import matplotlib.pyplot as plt
-from src.utils.metrics import get_gpu_memory_map
+
+"""
+Starts LR range test for multiple hyperparmaeters and plots them
+"""
 
 # -cfg src\models\LR_Tests\bs_6\Deep_resnet50_gruV4bs6num_iter100ID19/train_config.json
 
@@ -24,7 +27,7 @@ with open(args.config) as js:
 
 historys = []
 weight_decays = [0, 1e-4, 1e-6, 1e-8]
-# weight_decays = [2, 4, 6, 8, 10, 12]
+# batch sizes = [2, 4, 6, 8, 10, 12]
 
 
 for wd in weight_decays:
@@ -37,7 +40,6 @@ for wd in weight_decays:
     val_loader = DataLoader(val_dataset, val_dataset.batch_size, shuffle=False)
     optimizer = optim.Adam(model.parameters(), lr=1e-7, weight_decay=wd)
     lr_finder = LRFinder(model, optimizer, criterion, device=device)
-    # sys.stderr.write(f"\nMemory used(1): {get_gpu_memory_map()}")
     try:
         lr_finder.range_test(trainer.loader, end_lr=10, num_iter=config["num_epochs"])  # val_loader=val_loader
         historys.append(lr_finder.history)
@@ -47,8 +49,9 @@ for wd in weight_decays:
             print(f'| WARNING: ran out of memory for batch size {wd}')
         torch.cuda.empty_cache()
         weight_decays.remove(wd)
-    # sys.stderr.write(f"\nMemory used(2): {get_gpu_memory_map()}\n")
     lr_finder.reset()
+
+# creates a plot of the lr range test results
 fig = plt.figure(figsize=(15, 10))
 ax = fig.add_subplot(111)
 

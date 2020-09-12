@@ -1,0 +1,55 @@
+#!/bin/bash
+#$ -l mem=6G
+#$ -cwd
+#$ -l cuda=1
+#$ -l nv_mem_free=1.8G
+#$ -l h_rt=1:30:00
+#$ -N log_updt
+
+echo " Start of SGE job " 
+echo "$date"
+# Identify Job-ID
+echo ""
+echo "Hostname"
+echo "$HOSTNAME"
+echo 'Job-ID:'
+echo $JOB_ID
+echo 'user:'
+echo $USER
+echo ""
+echo "Environment:"
+
+env_name=torch
+echo $env_name
+
+echo ""
+echo ""
+echo "START OF INSTALLATION"
+
+
+#setup_file=list_libraries.py
+export PYTHONPATH=$PWD:$PYTHONPATH
+#activate environment
+source $PWD/miniconda/bin/activate $env_name
+
+# install / update your desired packages, e.g.:
+# pip install opencv-python
+# pip install torchvision
+# pip install opencv-python
+# pip install Pillow
+# pip install tqdm
+
+
+echo "END OF INSTALLATION"
+echo ""
+
+echo "List of currently installed packages in: " $env_name 
+
+echo ""
+
+echo ""
+pip list
+conda info --envs
+
+
+
