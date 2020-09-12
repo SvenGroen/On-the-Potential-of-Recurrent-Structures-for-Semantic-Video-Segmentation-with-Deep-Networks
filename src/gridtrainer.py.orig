@@ -294,8 +294,6 @@ class GridTrainer:
         """
         for epoch in tqdm(range(self.get_starting_parameters(what="epoch"), self.config["num_epochs"])):
             sys.stderr.write(f"\nStarting new epoch: {epoch}\n")
-            #memory = 0
-            #max_mem = 0
             if not self._RESTART:
                 self.logger["epochs"].append(epoch)
                 self.logger["lrs"].append(self.optimizer.state_dict()["param_groups"][0]["lr"])
@@ -415,7 +413,7 @@ class GridTrainer:
                 out_vid = cv2.VideoWriter(
                     str(out_folder) + "/eval_{}_ep{}.mp4".format(mode, self.logger["epochs"][-1]), fourcc, 29,
                     (1536, 270))
-            flickering = 0
+
             flickering_sum = 0
             flickering_img_size = 0
             fp = 0
@@ -485,7 +483,6 @@ class GridTrainer:
                 metrics["FIPv2"].update(fipv2)
                 metrics["FP"].update(fp)
                 metrics["FIP"].update(fip)
-
                 metrics["Time_taken"].update(end)
                 metrics["Mean IoU"].update(avg_jacc)
                 metrics["Pixel Accuracy"].update(overall_acc)
@@ -512,7 +509,6 @@ class GridTrainer:
             metrics["curr_epoch"] = self.logger["epochs"][-1]
             metrics["num_params"].update(sum([param.nelement() for param in self.model.parameters()]))
 
-
             if self.logger["epochs"][-1] % video_freq == 0 or self.logger["epochs"][-1] == self.config[
                 "num_epochs"] - 1 or final:
                 out_vid.release()
@@ -536,9 +532,9 @@ class GridTrainer:
         from statistics import mean
         import time
         self.set_seeds(seed=0)
-        print("dataset seed: ", self.dataset.seed)
         self.load_after_restart(name=checkpoint)
         self.dataset.set_start_index(0)
+        self.dataset.apply_transform = False
         durations = []
         with torch.no_grad():
             sys.stderr.write("\nEvaluating\n")
@@ -550,21 +546,27 @@ class GridTrainer:
             out_folder.mkdir(parents=True, exist_ok=True)
             mode = "train" if not self.test else "val"
             for i, batch in enumerate(loader):
+<<<<<<< HEAD
                 if self.test:
                     if i not in [58, 174, 290, 406]:
                         continue
                 print("i", i)
+=======
+>>>>>>> f4cd37599a266a914b58e75177ee8697dcae6838
                 start = time.time()
                 idx, video_start, (images, labels) = batch
-                print("index: ", idx)
                 images, labels = (images.to(self.device), labels.to(self.device))
                 if torch.any(video_start.bool()):
                     self.model.reset()
                 pred = self.model(images)
                 outputs = torch.argmax(pred, dim=1).float()
                 end = time.time() - start
+<<<<<<< HEAD
+                durations.append(end * 1000)
+=======
                 if i > 3:
                     durations.append(end * 1000)
+>>>>>>> f4cd37599a266a914b58e75177ee8697dcae6838
                 if i in [58, 174, 290, 406]:  #
                     labels = labels.type(torch.uint8)
                     outputs = outputs.type(torch.uint8)
@@ -581,6 +583,7 @@ class GridTrainer:
                         cv2.imwrite(str(out_folder) + "/{}_{}_{}.png".format(self.config["model"], mode, i), image)
                 if i == 500:
                     break
+        print("durations: ", durations, "len(dur): ", len(durations))
         return mean(durations)
 
 
@@ -590,13 +593,13 @@ if __name__ == "__main__":
     track_id = 00
     num_epochs = 10
     eval_steps = 2
+
     unique_name = "ID" + str(track_id) + model + "_bs" + str(batch_size) + "num_ep" \
                   + str(num_epochs) + "ev" + str(eval_steps)
     config = {
         "save_folder_path": "src/models/trained_models/testing2",
         "save_files_path": "src/models/trained_models/testing2/" + unique_name,
         "model": model,
-
         "batch_size": batch_size,
         "num_epochs": num_epochs,
         "evaluation_steps": eval_steps,
@@ -607,5 +610,5 @@ if __name__ == "__main__":
     with open(str(Path(config["save_files_path"]) / "train_config.json"), "w") as js:  # save learn config
         json.dump(config, js)
     trainer = GridTrainer(config, load_from_checkpoint=False)
-    # trainer.eval(save_file_path=str(config["save_files_path"] + "/intermediate_results"), load_most_recent=False)
+    trainer.eval(save_file_path=str(config["save_files_path"] + "/intermediate_results"), load_most_recent=False)
     # trainer.train()

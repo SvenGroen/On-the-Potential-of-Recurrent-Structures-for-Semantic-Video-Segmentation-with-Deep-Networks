@@ -186,10 +186,7 @@ class AverageMeter(object):
         self.sum += val * n
         self.count += n
         self.avg = self.sum / self.count
-        self.history.append(val)
 
-    def append(self, val):
-        self.history.append(val)
 
 def get_gpu_memory_map():
     """Get the current gpu usage.

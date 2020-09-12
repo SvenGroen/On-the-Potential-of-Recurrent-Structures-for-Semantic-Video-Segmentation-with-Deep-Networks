@@ -10,10 +10,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from src.gridtrainer import GridTrainer
 
-
-
-
-
 model_path = Path("src/models/trained_models/yt_fullV4")
 
 rows = []
@@ -45,11 +41,12 @@ for folder in model_path.glob("*"):
         print(e)
         continue
 
-
     time_taken = train_trainer.time_and_image_eval()
     del train_trainer
     mode = "resnet" if "resnet" in config["model"] else "mobile"
     rows.append([label, mode, time_taken])
+<<<<<<< HEAD
+=======
     try:
         val_trainer = GridTrainer(config=config, train=False, batch_size=1,
                                   load_from_checkpoint=True)
@@ -60,8 +57,8 @@ for folder in model_path.glob("*"):
     del val_trainer
     torch.cuda.empty_cache()
 
+>>>>>>> f4cd37599a266a914b58e75177ee8697dcae6838
 df = pd.DataFrame(rows, columns=["Label", "backbone", "time"])
-print(df)
 mobile = df[df["backbone"] == "mobile"]["time"]
 resnet = df[df["backbone"] == "resnet"]["time"]
 index = df[df["backbone"] == "mobile"]["Label"]
@@ -69,7 +66,11 @@ df = pd.DataFrame({'mobile': list(mobile),
                    'resnet': list(resnet)}, index=index)
 df = df.sort_index()
 df.to_csv(model_path / "time_results.csv")
+<<<<<<< HEAD
+ax = df.round(3).plot.bar(rot=0)
+=======
 ax = df.round(3).plot.bar(rot=0, figsize=(20, 5))
+>>>>>>> f4cd37599a266a914b58e75177ee8697dcae6838
 for p in ax.patches:
     ax.annotate(np.round(p.get_height(), decimals=2), (p.get_x() + p.get_width() / 2., p.get_height()), ha='center',
                 va='center', xytext=(0, 10), textcoords='offset points')
