@@ -138,7 +138,6 @@ class GridTrainer:
         Ensures reproducibility
         :param seed: int: value that should be used as seed
         """
-        sys.stderr.write(f"\nSeed: {seed}\n")
         random.seed(seed)
         np.random.seed(seed)
         torch.manual_seed(seed)
@@ -200,7 +199,7 @@ class GridTrainer:
         captures the current evaluation status and saves it in metrics.pth.tar. 
         It will be reloaded by load_after_restart().
         """
-         torch.save(self.metric_logger, path)
+        torch.save(self.metric_logger, path)
 
     def restart_script(self):
         """
@@ -249,13 +248,13 @@ class GridTrainer:
             VRAM = "5G"
         option = ' -l nv_mem_free=' + str(VRAM) if not final else ' -l hostname=vr*'
         recall_parameter = "qsub -N " + job_name + self.config["model"] + option \
-                          + " -l h_rt=01:29:00" \
-                          + " -o " + str(self.config["save_files_path"]) + "/log_files/" + job_name + ".o$JOB_ID" \
-                          + " -e " + str(self.config["save_files_path"]) + "/log_files/" + job_name + ".e$JOB_ID" \
-                          + " -v STPS=" + str(num_eval_steps) \
-                          + " -v RDM=" + str(int(random_start)) \
-                          + " -v FNL=" + str(int(final)) \
-                          + " -v PTH=" + str(self.config["save_files_path"]) + " src/eval_model.sge"
+                           + " -l h_rt=01:29:00" \
+                           + " -o " + str(self.config["save_files_path"]) + "/log_files/" + job_name + ".o$JOB_ID" \
+                           + " -e " + str(self.config["save_files_path"]) + "/log_files/" + job_name + ".e$JOB_ID" \
+                           + " -v STPS=" + str(num_eval_steps) \
+                           + " -v RDM=" + str(int(random_start)) \
+                           + " -v FNL=" + str(int(final)) \
+                           + " -v PTH=" + str(self.config["save_files_path"]) + " src/eval_model.sge"
 
         if torch.cuda.is_available():
             sys.stderr.write(f"\nRecall Parameter:\n{recall_parameter}")
@@ -358,7 +357,7 @@ class GridTrainer:
 
     def eval(self, random_start=True, eval_length=29 * 4, save_file_path=None, load_most_recent=True,
              checkpoint="checkpoint.pth.tar", final=False):
-"""
+        """
         Evaluation loop. Will usually be called by intermediate_eval() through a different script.
         Stores and saves the evaluation results.
 
@@ -367,6 +366,8 @@ class GridTrainer:
         :param save_file_path:   config["save_file_path"] + /intermediate_results/ or /final_results/,
                                  where results are saved
         :param load_most_recent: Should the most recent checlpoint be loaded? (usefull for debugging)
+        :param checkpoint: the checkpoint that should be loaded
+        :param final: is it a final evaluation or an intermediate
         """
         import time
         self.set_seeds(seed=0)
@@ -402,7 +403,7 @@ class GridTrainer:
             fp = 0
             flickering_sum2 = 0
             fip = 0
-	    '''
+            '''
             Evaluation loop:
             - meassures time the model takes to process 1 batch
             - tracks several metric values (FP, FIP, MIoU, Pixel Accuracy, Per Class Accuracy, Dice)
@@ -500,6 +501,62 @@ class GridTrainer:
             path = self.config[
                        "save_files_path"] + "/metrics.pth.tar" if not final else save_file_path + "/metrics.pth.tar"
             self.save_metric_logger(path=path)
+
+    def time_and_image_eval(self, checkpoint="checkpoint.pth.tar", batch_size=1):
+        """
+        This method is used to meassure the average time a model takes to evaluate a single image. In addition to that
+        several image are selected and saves as png files.
+        :param self:
+        :param checkpoint: the checkpoint that should be loaded
+        :param batch_size: what batch size should be used
+        :return: average time_taken
+
+        """
+        from statistics import mean
+        import time
+        self.set_seeds(seed=0)
+        print("dataset seed: ", self.dataset.seed)
+        self.load_after_restart(name=checkpoint)
+        self.dataset.set_start_index(0)
+        durations = []
+        with torch.no_grad():
+            sys.stderr.write("\nEvaluating\n")
+            self.model.eval()
+            self.model.start_eval()
+            to_PIL = T.ToPILImage()
+            loader = DataLoader(dataset=self.dataset, batch_size=batch_size, shuffle=False)
+            out_folder = Path(self.config["save_files_path"]) / "example_results"
+            out_folder.mkdir(parents=True, exist_ok=True)
+            mode = "train" if self.dataset.train else "val"
+            for i, batch in enumerate(loader):
+                print("i", i)
+                start = time.time()
+                idx, video_start, (images, labels) = batch
+                print("index: ", idx)
+                images, labels = (images.to(self.device), labels.to(self.device))
+                if torch.any(video_start.bool()):
+                    self.model.reset()
+                pred = self.model(images)
+                outputs = torch.argmax(pred, dim=1).float()
+                end = time.time() - start
+                durations.append(end)
+                if i in [58, 174, 290, 406]:  #
+                    labels = labels.type(torch.uint8)
+                    outputs = outputs.type(torch.uint8)
+                    for j in range(batch_size):  # if batchsize > 1 assert that the video writing works
+                        out = outputs[j, :, :].unsqueeze(0)
+                        lbl = labels[j, :, :].unsqueeze(0)
+                        img = images[j, :, :, :].unsqueeze(0)
+                        tmp_prd = to_PIL(out[0].cpu().float())
+                        tmp_inp = to_PIL(img.squeeze(0).cpu())
+                        tmp_inp = Image.fromarray(cv2.cvtColor(np.asarray(tmp_inp), cv2.COLOR_RGB2BGR))
+                        tmp_lbl = to_PIL(lbl.cpu().float())
+                        image = (np.array(stack.hstack([tmp_inp, tmp_lbl, tmp_prd])))
+                        print("saving: ", str(out_folder))
+                        cv2.imwrite(str(out_folder) + "/{}_{}_{}.png".format(self.config["model"], mode, i), image)
+                if i == 500:
+                    break
+        return mean(durations)
 
 
 if __name__ == "__main__":

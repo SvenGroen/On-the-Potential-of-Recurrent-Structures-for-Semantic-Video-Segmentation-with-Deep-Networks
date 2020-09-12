@@ -44,25 +44,40 @@ def hstack(images):
 
 
 class YT_Greenscreen(data.Dataset):
-    def __init__(self, train=True, start_index=torch.tensor([0]), batch_size=1, seed=0):
+    def __init__(self, train=True, start_index=torch.tensor([0]), batch_size=1, seed=0, apply_transform=True):
         self.train = train
         self.mode = "train" if train else "test"
         with open("src/dataset/data/images/YT_4sec/" + self.mode + "/out_log.json", "r") as json_file:
             self.data = json.load(json_file)
         self.start_index = start_index if isinstance(start_index, int) else start_index[0].item()
         self.seed = seed  # makes sure the transformations are applied equally
-        self.cur_idx=self.start_index
+        self.cur_idx = self.start_index
         self.transform = Segmentation_transform(seed=self.seed)
         self.batch_size = batch_size
-
+        self.apply_transform = apply_transform
         self.zeros_inp = None
         self.zeros_lbl = None
+        self.set_seeds(self.seed)
 
     def __len__(self):
         length = len(self.data["inputs"])
         rest = length % self.batch_size
 
         return length - rest  # self.batch_size * 500 #length - rest
+
+    def set_seeds(self, seed):
+        """
+        Ensures reproducibility
+        :param seed: int: value that should be used as seed
+        """
+        random.seed(seed)
+        np.random.seed(seed)
+        torch.manual_seed(seed)
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed(seed)
+            torch.cuda.manual_seed_all(seed)
+            torch.backends.cudnn.deterministic = True
+            torch.backends.cudnn.benchmark = False
 
     def set_start_index(self, idx):
         if isinstance(idx, int):
@@ -77,7 +92,8 @@ class YT_Greenscreen(data.Dataset):
         video_start = bool(int(self.data["inputs"][idx][1]))
         if video_start:
             self.seed = random.randint(0, 999)
-            self.transform = Segmentation_transform(seed=self.seed)
+            print("random seed:", self.seed)
+            self.transform = Segmentation_transform(seed=self.seed, activate=self.apply_transform)
             self.transform.random_apply()
 
         img = Image.open(self.data["inputs"][idx][0])
@@ -116,7 +132,7 @@ class YT_Greenscreen(data.Dataset):
 # --------- Visualization functions -----------
 
 class Segmentation_transform:
-    def __init__(self, seed):
+    def __init__(self, seed, activate=True):
         self.seed = seed
         self.angle = 0
         self.translate = (0, 0)
@@ -125,7 +141,7 @@ class Segmentation_transform:
         self.hflip = random.randint(0, 1)
         self.brightness = random.choice([0.6, 0.8, 1.2, 1.4])
         self.random_apply()
-        self.apply_transform = True
+        self.apply_transform = activate
 
     def deactivate_transform(self):
         self.apply_transform = False
