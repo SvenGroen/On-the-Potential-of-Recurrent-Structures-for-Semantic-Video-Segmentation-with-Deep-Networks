@@ -6,13 +6,17 @@ import sys
 
 
 def visualize_metric(metric_log, step_size=2, epoch=0, save_file_path=None):
+    cur_epoch = -1
     for key in metric_log["train"][0]:
         if not key in ["curr_epoch", "hist"]:
             y = defaultdict(list)
             for i in range(len(metric_log["train"])):
                 try:
-                    y["train"].append((metric_log["train"][i]["curr_epoch"], metric_log["train"][i][key].avg))
-                    y["val"].append((metric_log["train"][i]["curr_epoch"], metric_log["val"][i][key].avg))
+                    if cur_epoch > metric_log["train"][i]["curr_epoch"]:
+                        continue  # skip so the plot is not jumping all over the place due to previous entries
+                    cur_epoch = metric_log["train"][i]["curr_epoch"]
+                    y["train"].append((cur_epoch, metric_log["train"][i][key].avg))
+                    y["val"].append((cur_epoch, metric_log["val"][i][key].avg))
                 except IndexError as e:
                     sys.stderr.write(f"\nError:\n{e}\n")
             print(y["train"], y["val"])

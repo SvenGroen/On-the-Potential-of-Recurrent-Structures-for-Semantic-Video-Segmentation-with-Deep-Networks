@@ -19,12 +19,17 @@ from src.utils.metrics import get_gpu_memory_map
 
 
 class GridTrainer:
+<<<<<<< HEAD
     """
     The GridTrainer object holds relevant parameters for training. It is supposed to be used in conjunction with a
     Grid Computing Network where script restart due to time limitations are necessary.
     It allows to restart the training process and start an intermediate evaluation by calling the train.sge or
     eval_model.sge script.
     This class is especially useful for multiple grid jobs and separate computers.
+=======
+    def __init__(self, config, train=True, batch_size=None, load_from_checkpoint=True):
+        self.seed = 0
+>>>>>>> 69d78233b0e512368cc9361248be4c6ee2d1b570
 
     Uses Adam Optimizer for training, learning rate and weight decay values have been predetermined
     based on a lr range test. They can be changed for each model in initiator.py.
@@ -103,15 +108,12 @@ class GridTrainer:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.config = config
         self.model, self.weight_decay, self.lr_boundarys, self.detach_interval = initiator.initiate_model(self.config)
-        # self.lr_boundarys = (self.lr_boundarys[0]*0.1,self.lr_boundarys[1]*0.1)
         self.model = self.model.to(self.device)
         self.criterion = initiator.initiate_criterion(self.config)
-        # self.logger = initiator.initiate_logger(self.lr_boundarys[0])
         self.logger = defaultdict(list)
         self.metric_logger = defaultdict(list)
-
         self.batch_size = self.config["batch_size"] if batch_size is None else batch_size
-        self.time_logger = time_logger.TimeLogger(restart_time=60 * 60 * 1.19)  # 60 * 60 * 1.2
+        self.time_logger = time_logger.TimeLogger(restart_time=60 * 60 * 1.19)
         self.dataset = YT_Greenscreen(train=train, start_index=0,
                                       batch_size=self.batch_size, seed=self.seed)
         self.loader = DataLoader(dataset=self.dataset, shuffle=False,
@@ -150,10 +152,13 @@ class GridTrainer:
             torch.backends.cudnn.benchmark = False
 
     def load_from_checkpoint(self, checkpoint):
+<<<<<<< HEAD
         """
         Assigns saved status from given checkpoint to relevant attribute variables
         :param checkpoint: dict: previously saved checkpoint that should be loaded
         """
+=======
+>>>>>>> 69d78233b0e512368cc9361248be4c6ee2d1b570
         print("=> Loading checkpoint at epoch {} with index {}".format(checkpoint["epochs"][-1],
                                                                        checkpoint["batch_index"]))
         self.model.load_state_dict(checkpoint["state_dict"])
@@ -169,13 +174,21 @@ class GridTrainer:
             "ID: {}\tEpoch: {}\tBatch_idx: {}"
             "\n".format(self.config["track_ID"], self.logger["epochs"][-1], self.logger["batch_index"]))
 
+<<<<<<< HEAD
+    def load_after_restart(self):
+        """
+        checks if a previous checkpoint and previous metric log exists and loads it if possible.
+        """
+=======
     def load_after_restart(self, name="checkpoint.pth.tar"):
+>>>>>>> 69d78233b0e512368cc9361248be4c6ee2d1b570
         try:
             checkpoint = torch.load(self.config["save_files_path"] + "/" + name, map_location=self.device)
             self.load_from_checkpoint(checkpoint)
         except IOError:
             sys.stderr.write("\nNo previous Checkpoint was found, new checkpoints will be saved at: {}".format(
                 self.config["save_files_path"] + "/checkpoint.pth.tar"))
+
         try:
             self.metric_logger = torch.load(self.config["save_files_path"] + "/metrics.pth.tar",
                                             map_location=self.device)
@@ -195,12 +208,17 @@ class GridTrainer:
         self.logger["seed"] = self.dataset.seed
         torch.save(self.logger, self.config["save_files_path"] + "/checkpoint.pth.tar")
 
-    def save_metric_logger(self, path=None):
+<<<<<<< HEAD
+    def save_metric_logger(self):
         """
         captures the current evaluation status and saves it in metrics.pth.tar. 
         It will be reloaded by load_after_restart().
         """
-         torch.save(self.metric_logger, path)
+        torch.save(self.metric_logger, self.config["save_files_path"] + "/metrics.pth.tar")
+=======
+    def save_metric_logger(self, path=None):
+        torch.save(self.metric_logger, path)
+>>>>>>> 69d78233b0e512368cc9361248be4c6ee2d1b570
 
     def restart_script(self):
         """
@@ -248,7 +266,16 @@ class GridTrainer:
         if "gruV3" in self.config["model"]:
             VRAM = "5G"
         option = ' -l nv_mem_free=' + str(VRAM) if not final else ' -l hostname=vr*'
+<<<<<<< HEAD
         recall_parameter = "qsub -N " + job_name + self.config["model"] + option \
+                           + " -o " + str(self.config["save_files_path"]) + "/log_files/" + job_name + ".o$JOB_ID" \
+                           + " -e " + str(self.config["save_files_path"]) + "/log_files/" + job_name + ".e$JOB_ID" \
+                           + " -v STPS=" + str(num_eval_steps) \
+                           + " -v RDM=" + str(int(random_start)) \
+                           + " -v FNL=" + str(int(final)) \
+                           + " -v PTH=" + str(self.config["save_files_path"]) + " src/eval_model.sge"
+=======
+        recallParameter = "qsub -N " + job_name + self.config["model"] + option \
                           + " -l h_rt=01:29:00" \
                           + " -o " + str(self.config["save_files_path"]) + "/log_files/" + job_name + ".o$JOB_ID" \
                           + " -e " + str(self.config["save_files_path"]) + "/log_files/" + job_name + ".e$JOB_ID" \
@@ -256,6 +283,7 @@ class GridTrainer:
                           + " -v RDM=" + str(int(random_start)) \
                           + " -v FNL=" + str(int(final)) \
                           + " -v PTH=" + str(self.config["save_files_path"]) + " src/eval_model.sge"
+>>>>>>> 69d78233b0e512368cc9361248be4c6ee2d1b570
 
         if torch.cuda.is_available():
             sys.stderr.write(f"\nRecall Parameter:\n{recall_parameter}")
@@ -338,15 +366,17 @@ class GridTrainer:
                     self.model.detach()
                 else:
                     loss.backward(retain_graph=True)
+
                 self.optimizer.step()
                 self.scheduler.step()
                 self.logger["running_loss"] += loss.item() * images.size(0)
-                print("Loss: {}, running_loss: {}".format(loss, self.logger["running_loss"]))
+                self.logger["memory"].append(memory)
 
             with open(str(self.config["save_files_path"] + "/memory.txt"), "w") as txt_file:
-                # max_mem = np.max(np.array(memorys))
                 txt_file.write(f"Max cuda memory used in epoch {epoch}: {max_mem}\n")
-            self.logger["loss"].append(self.logger["running_loss"] / len(self.dataset))
+
+            # save current status and start evaluation every "evaluation_steps" epochs
+            self.logger["loss"].append(int(self.logger["running_loss"]) / len(self.dataset))
             visualize_logger(self.logger, self.config["save_files_path"])
             self.save_checkpoint()
             if epoch == self.config["num_epochs"] - 1:
@@ -356,9 +386,9 @@ class GridTrainer:
                 print("intermediate")
                 self.intermediate_eval(num_eval_steps=29 * 4, random_start=True, final=False)
 
-    def eval(self, random_start=True, eval_length=29 * 4, save_file_path=None, load_most_recent=True,
-             checkpoint="checkpoint.pth.tar", final=False):
-"""
+<<<<<<< HEAD
+    def eval(self, random_start=True, eval_length=29 * 4, save_file_path=None, load_most_recent=True):
+        """
         Evaluation loop. Will usually be called by intermediate_eval() through a different script.
         Stores and saves the evaluation results.
 
@@ -369,6 +399,11 @@ class GridTrainer:
         :param load_most_recent: Should the most recent checlpoint be loaded? (usefull for debugging)
         """
         import time
+        sys.stderr.write("\nEvaluating\n")
+=======
+    def eval(self, random_start=True, eval_length=29 * 4, save_file_path=None, load_most_recent=True,
+             checkpoint="checkpoint.pth.tar", final=False):
+        import time
         self.set_seeds(seed=0)
         video_freq = 20
         if load_most_recent:
@@ -377,32 +412,61 @@ class GridTrainer:
             self.logger["epochs"] = [-1]
         self.dataset.set_start_index(0)
         running_loss = 0
+>>>>>>> 69d78233b0e512368cc9361248be4c6ee2d1b570
         with torch.no_grad():
-            sys.stderr.write("\nEvaluating\n")
-            self.model.eval()
-            self.model.start_eval()
-            metrics = defaultdict(AverageMeter)
-            to_PIL = T.ToPILImage()
-            if random_start:
-                start_index = np.random.choice(range(len(self.dataset) - eval_length))
-                self.dataset.set_start_index(int(start_index))
-            loader = DataLoader(dataset=self.dataset, batch_size=self.batch_size, shuffle=False)
+            # create folder to save results
             out_folder = Path(save_file_path)
             out_folder.mkdir(parents=True, exist_ok=True)
-            mode = "train" if self.dataset.train else "val"
-            if self.logger["epochs"][-1] % video_freq == 0 or self.logger["epochs"][-1] == self.config[
-                "num_epochs"] - 1 or final:
-                fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-                out_vid = cv2.VideoWriter(
-                    str(out_folder) + "/eval_{}_ep{}.mp4".format(mode, self.logger["epochs"][-1]), fourcc, 29,
-                    (1536, 270))
+
+            if load_most_recent:
+                self.load_after_restart()  # load the most recent log data
+            else:
+                self.logger["epochs"] = [-1]
+
+            # set initial values for variables
+            self.dataset.set_start_index(0)
+            running_loss = 0
+            video_freq = 20  # every 20 epochs a video with the results will be saved
             flickering = 0
             flickering_sum = 0
             flickering_img_size = 0
             fp = 0
             flickering_sum2 = 0
             fip = 0
-	    '''
+            to_PIL = T.ToPILImage()  # conversion of tensor to PIL image
+            metrics = defaultdict(AverageMeter)  # to save the results
+
+            # Ensure model is in evaluation status its states are newly initiated
+            self.model.eval()
+            self.model.start_eval()
+
+            # set Dataloader
+            loader = DataLoader(dataset=self.dataset, batch_size=self.batch_size, shuffle=False, num_workers=0)
+
+            # start at random position if wanted
+            if random_start:
+                start_index = np.random.choice(range(len(self.dataset) - eval_length))
+                self.dataset.set_start_index(int(start_index))
+<<<<<<< HEAD
+
+            # create video file every video_freq epochs
+            mode = "train" if self.dataset.train else "val"
+            if self.logger["epochs"][-1] % video_freq == 0 or self.logger["epochs"][-1] == self.config[
+                "num_epochs"] - 1:
+=======
+            loader = DataLoader(dataset=self.dataset, batch_size=self.batch_size, shuffle=False)
+            out_folder = Path(save_file_path)
+            out_folder.mkdir(parents=True, exist_ok=True)
+            mode = "train" if self.dataset.train else "val"
+            if self.logger["epochs"][-1] % video_freq == 0 or self.logger["epochs"][-1] == self.config[
+                "num_epochs"] - 1 or final:
+>>>>>>> 69d78233b0e512368cc9361248be4c6ee2d1b570
+                fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+                out_vid = cv2.VideoWriter(
+                    str(out_folder) + "/eval_{}_ep{}.mp4".format(mode, self.logger["epochs"][-1]), fourcc, 29,
+                    (1536, 270))
+
+            '''
             Evaluation loop:
             - meassures time the model takes to process 1 batch
             - tracks several metric values (FP, FIP, MIoU, Pixel Accuracy, Per Class Accuracy, Dice)
@@ -433,6 +497,8 @@ class GridTrainer:
                                                                                   num_classes=num_classes)
 
                 running_loss += loss.item() * images.size(0)
+
+                # calculation if FIP and FP
                 diff_img = (outputs != labels) * (labels + 1)
                 if i > 0:
                     flickering = torch.sum(diff_img != old_out)
@@ -458,8 +524,13 @@ class GridTrainer:
 
                 # conversions since hstack expects PIL image or np array and cv2 np array with channel at last position
                 if self.logger["epochs"][-1] % video_freq == 0 or self.logger["epochs"][-1] == self.config[
+<<<<<<< HEAD
+                    "num_epochs"] - 1:
+                    for j in range(self.batch_size):  # if batch size > 1 assert that the video writing works
+=======
                     "num_epochs"] - 1 or final:
                     for j in range(self.batch_size):  # if batchsize > 1 assert that the video writing works
+>>>>>>> 69d78233b0e512368cc9361248be4c6ee2d1b570
                         out = outputs[j, :, :].unsqueeze(0)
                         lbl = labels[j, :, :].unsqueeze(0)
                         img = images[j, :, :, :].unsqueeze(0)
@@ -468,13 +539,14 @@ class GridTrainer:
                         tmp_inp = Image.fromarray(cv2.cvtColor(np.asarray(tmp_inp), cv2.COLOR_RGB2BGR))
                         tmp_lbl = to_PIL(lbl.cpu().float())
                         out_vid.write(np.array(stack.hstack([tmp_inp, tmp_lbl, tmp_prd])))
-                        # break after certain amount of frames (remove for final (last) evaluation)
+                        # break after certain amount of frames
                 if i == eval_length:
                     break
             # save status of evaluation
             metrics["eval_loss"].update(running_loss / len(self.dataset))
             metrics["curr_epoch"] = self.logger["epochs"][-1]
             metrics["num_params"].update(sum([param.nelement() for param in self.model.parameters()]))
+<<<<<<< HEAD
 
             grad = 0
             no_grad = 0
@@ -492,7 +564,11 @@ class GridTrainer:
             print("count: ", count)
             print(f"backbone: {no_grad}, other: {grad}, both: {no_grad + grad}; check: ", metrics["num_params"].val)
             if self.logger["epochs"][-1] % video_freq == 0 or self.logger["epochs"][-1] == self.config[
+                "num_epochs"] - 1:
+=======
+            if self.logger["epochs"][-1] % video_freq == 0 or self.logger["epochs"][-1] == self.config[
                 "num_epochs"] - 1 or final:
+>>>>>>> 69d78233b0e512368cc9361248be4c6ee2d1b570
                 out_vid.release()
             self.model.train()
             self.model.end_eval()

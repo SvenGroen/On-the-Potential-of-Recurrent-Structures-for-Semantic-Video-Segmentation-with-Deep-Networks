@@ -22,8 +22,7 @@ class TimeLogger:
         self.last_update = time.time()
 
     def get_status(self):
-        sys.stderr.write(
-            f"\nPassed time = {time.time() - self.instantiated} and restart time: {self.restart} and average_batch_time = {self.avrg_batch_time}\n")
+            return f"\nPassed time = {time.time() - self.instantiated} and restart time: {self.restart} and average_batch_time = {self.avrg_batch_time}\n"
 
 # sys.stderr.write(f"\nBatch start= {self.batch_start} and instantiated: {self.instantiated} 
 # and bs_start + avrg -instant = {self.batch_start + self.avrg_batch_time - self.instantiated } > restart: {self.restart}\n")
