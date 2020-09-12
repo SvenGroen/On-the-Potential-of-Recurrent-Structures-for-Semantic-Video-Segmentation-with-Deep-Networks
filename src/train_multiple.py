@@ -23,7 +23,7 @@ models = ["Deep_mobile_lstmV4", "Deep_resnet50_lstmV4", "Deep_mobile_gruV4", "De
           "Deep_mobile_lstmV1", "Deep_mobile_gruV1", "Deep_resnet50_lstmV1", "Deep_resnet50_gruV1",
           "Deep+_resnet50", "Deep+_mobile", "Deep_mobile_lstmV5", "Deep_mobile_lstmV6", "Deep_mobile_lstmV7"]
 
-models = ["Deep_mobile_gruV3"]
+models = ["Deep_resnet50_lstmV4"]
 
 batch_sizes = 8
 num_epochs = 100
@@ -54,7 +54,7 @@ for i, config in enumerate(configs):
     # print(config)
     from subprocess import call
 
-    config["track_ID"] = 5
+    config["track_ID"] = 1
     unique_name = config["model"] + "_wd" + format(config["weight_decay"], ".0e") + "bs" + str(
         config["batch_size"]) + "num_ep" \
                   + str(config["num_epochs"]) + "ev" + str(config["evaluation_steps"]) + "ID" + str(config["track_ID"])

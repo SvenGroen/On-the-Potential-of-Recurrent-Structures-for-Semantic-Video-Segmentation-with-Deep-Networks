@@ -19,7 +19,7 @@ from src.utils.metrics import get_gpu_memory_map
 
 
 class GridTrainer:
-    def __init__(self, config, train=True, batch_size=None, load_from_checkpoint=True, num_workers=1):
+    def __init__(self, config, train=True, batch_size=None, load_from_checkpoint=True):
         self.seed = 0
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -68,7 +68,8 @@ class GridTrainer:
             torch.backends.cudnn.benchmark = False
 
     def load_from_checkpoint(self, checkpoint):
-        print("=> Loading checkpoint at epoch {} with index {}".format(checkpoint["epochs"][-1], checkpoint["batch_index"]))
+        print("=> Loading checkpoint at epoch {} with index {}".format(checkpoint["epochs"][-1],
+                                                                       checkpoint["batch_index"]))
         self.model.load_state_dict(checkpoint["state_dict"])
         self.optimizer.load_state_dict(checkpoint["optim_state_dict"])
         self.scheduler.load_state_dict(checkpoint["scheduler"])
@@ -83,9 +84,9 @@ class GridTrainer:
                                                                                            self.logger[
                                                                                                "batch_index"]))
 
-    def load_after_restart(self):
+    def load_after_restart(self, name="checkpoint.pth.tar"):
         try:
-            checkpoint = torch.load(self.config["save_files_path"] + "/checkpoint.pth.tar", map_location=self.device)
+            checkpoint = torch.load(self.config["save_files_path"] + "/" + name, map_location=self.device)
             self.load_from_checkpoint(checkpoint)
         except IOError:
             sys.stderr.write("\nNo previous Checkpoint was found, new checkpoints will be saved at: {}".format(
@@ -99,13 +100,13 @@ class GridTrainer:
     def save_checkpoint(self):
         self.logger["state_dict"] = self.model.state_dict()
         self.logger["optim_state_dict"] = self.optimizer.state_dict()
-        self.logger["batch_index"] = self.dataset.cur_idx#self.cur_idx[-1] + 1 if self.cur_idx[-1] != 0 else 0
+        self.logger["batch_index"] = self.dataset.cur_idx  # self.cur_idx[-1] + 1 if self.cur_idx[-1] != 0 else 0
         self.logger["scheduler"] = self.scheduler.state_dict()
         self.logger["seed"] = self.dataset.seed
         torch.save(self.logger, self.config["save_files_path"] + "/checkpoint.pth.tar")
 
-    def save_metric_logger(self):
-        torch.save(self.metric_logger, self.config["save_files_path"] + "/metrics.pth.tar")
+    def save_metric_logger(self, path=None):
+        torch.save(self.metric_logger, path)
 
     def restart_script(self):
         from subprocess import call
@@ -142,7 +143,8 @@ class GridTrainer:
         if "gruV3" in self.config["model"]:
             VRAM = "5G"
         option = ' -l nv_mem_free=' + str(VRAM) if not final else ' -l hostname=vr*'
-        recallParameter = "qsub -N " + job_name + self.config["model"] + option  \
+        recallParameter = "qsub -N " + job_name + self.config["model"] + option \
+                          + " -l h_rt=01:29:00" \
                           + " -o " + str(self.config["save_files_path"]) + "/log_files/" + job_name + ".o$JOB_ID" \
                           + " -e " + str(self.config["save_files_path"]) + "/log_files/" + job_name + ".e$JOB_ID" \
                           + " -v STPS=" + str(num_eval_steps) \
@@ -228,11 +230,13 @@ class GridTrainer:
                 print("intermediate")
                 self.intermediate_eval(num_eval_steps=29 * 4, random_start=True, final=False)
 
-    def eval(self, random_start=True, eval_length=29 * 4, save_file_path=None, load_most_recent=True):
+    def eval(self, random_start=True, eval_length=29 * 4, save_file_path=None, load_most_recent=True,
+             checkpoint="checkpoint.pth.tar", final=False):
         import time
+        self.set_seeds(seed=0)
         video_freq = 20
         if load_most_recent:
-            self.load_after_restart()  # load the most recent log data
+            self.load_after_restart(name=checkpoint)  # load the most recent log data
         else:
             self.logger["epochs"] = [-1]
         self.dataset.set_start_index(0)
@@ -246,14 +250,15 @@ class GridTrainer:
             if random_start:
                 start_index = np.random.choice(range(len(self.dataset) - eval_length))
                 self.dataset.set_start_index(int(start_index))
-            loader = DataLoader(dataset=self.dataset, batch_size=self.batch_size, shuffle=False, num_workers=0)
+            loader = DataLoader(dataset=self.dataset, batch_size=self.batch_size, shuffle=False)
             out_folder = Path(save_file_path)
             out_folder.mkdir(parents=True, exist_ok=True)
             mode = "train" if self.dataset.train else "val"
-            if self.logger["epochs"][-1] % video_freq == 0 or self.logger["epochs"][-1] == self.config["num_epochs"]-1:
+            if self.logger["epochs"][-1] % video_freq == 0 or self.logger["epochs"][-1] == self.config[
+                "num_epochs"] - 1 or final:
                 fourcc = cv2.VideoWriter_fourcc(*"mp4v")
                 out_vid = cv2.VideoWriter(
-                    str(out_folder) + "/intermediate_{}_ep{}.mp4".format(mode, self.logger["epochs"][-1]), fourcc, 29,
+                    str(out_folder) + "/eval_{}_ep{}.mp4".format(mode, self.logger["epochs"][-1]), fourcc, 29,
                     (1536, 270))
             flickering = 0
             flickering_sum = 0
@@ -262,6 +267,8 @@ class GridTrainer:
             flickering_sum2 = 0
             fip = 0
             for i, batch in enumerate(loader):
+                print(self.time_logger.get_status())
+                sys.stderr.write("\n" + self.time_logger.get_status() + "\n")
                 start = time.time()
                 idx, video_start, (images, labels) = batch
                 if torch.sum(idx == 0) > 1:
@@ -276,9 +283,13 @@ class GridTrainer:
                 # Conversion for metric evaluations
                 labels = labels.type(torch.uint8)
                 outputs = outputs.type(torch.uint8)
+                set_out = torch.max(outputs.int())  # can only be in range (0-1)
+                set_lbl = torch.max(labels.int())
+                num_classes = max(set_out, set_lbl) + 1
+                sys.stderr.write(f"\nNum Classes: {num_classes} and sets: ({set_out, set_lbl})")
                 overall_acc, avg_per_class_acc, avg_jacc, avg_dice = eval_metrics(outputs.to("cpu"),
                                                                                   labels.to("cpu"),
-                                                                                  num_classes=2)
+                                                                                  num_classes=num_classes)
 
                 running_loss += loss.item() * images.size(0)
                 diff_img = (outputs != labels) * (labels + 1)
@@ -291,7 +302,8 @@ class GridTrainer:
                     flickering_sum2 += flickering2
                     fip = float(flickering_sum2) / float(flickering_img_size)
 
-                print(flickering, flickering_sum, flickering_img_size, fp, fip)
+                print(f"current idx: {idx}\t len(dataset): {len(self.dataset)}")
+                sys.stderr.write(f"\ncurrent idx: {idx}\t len(dataset): {len(self.dataset)}\n")
                 old_out = diff_img
                 old_out2 = outputs
                 metrics["FP"].update(fp)
@@ -304,7 +316,8 @@ class GridTrainer:
                 metrics["Dice"].update(avg_dice)
 
                 # conversions since hstack expects PIL image or np array and cv2 np array with channel at last position
-                if self.logger["epochs"][-1] % video_freq == 0 or self.logger["epochs"][-1] == self.config["num_epochs"]-1:
+                if self.logger["epochs"][-1] % video_freq == 0 or self.logger["epochs"][-1] == self.config[
+                    "num_epochs"] - 1 or final:
                     for j in range(self.batch_size):  # if batchsize > 1 assert that the video writing works
                         out = outputs[j, :, :].unsqueeze(0)
                         lbl = labels[j, :, :].unsqueeze(0)
@@ -320,12 +333,15 @@ class GridTrainer:
             metrics["eval_loss"].update(running_loss / len(self.dataset))
             metrics["curr_epoch"] = self.logger["epochs"][-1]
             metrics["num_params"].update(sum([param.nelement() for param in self.model.parameters()]))
-            if self.logger["epochs"][-1] % video_freq == 0 or self.logger["epochs"][-1] == self.config["num_epochs"]-1:
+            if self.logger["epochs"][-1] % video_freq == 0 or self.logger["epochs"][-1] == self.config[
+                "num_epochs"] - 1 or final:
                 out_vid.release()
             self.model.train()
             self.model.end_eval()
             self.metric_logger[mode].append(metrics)
-            self.save_metric_logger()
+            path = self.config[
+                       "save_files_path"] + "/metrics.pth.tar" if not final else save_file_path + "/metrics.pth.tar"
+            self.save_metric_logger(path=path)
 
 
 if __name__ == "__main__":
