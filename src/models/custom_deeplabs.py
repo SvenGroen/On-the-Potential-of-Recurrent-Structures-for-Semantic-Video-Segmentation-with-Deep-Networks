@@ -453,7 +453,7 @@ class Deeplabv3Plus_gruV3(nn.Module):
             self.base = deeplabv3plus_resnet50(num_classes=2, pretrained_backbone=True)
             in_channels = 2048
             low_level_channels = 256
-        self.base.classifier = None
+        # self.base.classifier = None
         self.classifier = DeepLabHeadV3PlusGRU(in_channels, low_level_channels, 2, [12, 24, 36],
                                                store_previous=False).to(device)
         self.hidden = self.classifier.hidden
@@ -498,7 +498,7 @@ class Deeplabv3Plus_gruV4(nn.Module):
             self.base = deeplabv3plus_resnet50(num_classes=2, pretrained_backbone=True)
             in_channels = 2048
             low_level_channels = 256
-        self.base.classifier = None
+        # self.base.classifier = None
         self.classifier = DeepLabHeadV3PlusGRU(in_channels, low_level_channels, 2, [12, 24, 36],
                                                store_previous=True).to(device)
         self.hidden = self.classifier.hidden

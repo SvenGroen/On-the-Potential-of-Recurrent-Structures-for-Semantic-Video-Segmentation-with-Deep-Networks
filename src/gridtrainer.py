@@ -377,6 +377,7 @@ class GridTrainer:
         else:
             self.logger["epochs"] = [-1]
         self.dataset.set_start_index(0)
+        self.dataset.apply_transform = False
         running_loss = 0
         with torch.no_grad():
             sys.stderr.write("\nEvaluating\n")
@@ -515,9 +516,9 @@ class GridTrainer:
         from statistics import mean
         import time
         self.set_seeds(seed=0)
-        print("dataset seed: ", self.dataset.seed)
         self.load_after_restart(name=checkpoint)
         self.dataset.set_start_index(0)
+        self.dataset.apply_transform = False
         durations = []
         with torch.no_grad():
             sys.stderr.write("\nEvaluating\n")
@@ -529,17 +530,16 @@ class GridTrainer:
             out_folder.mkdir(parents=True, exist_ok=True)
             mode = "train" if self.dataset.train else "val"
             for i, batch in enumerate(loader):
-                print("i", i)
                 start = time.time()
                 idx, video_start, (images, labels) = batch
-                print("index: ", idx)
                 images, labels = (images.to(self.device), labels.to(self.device))
                 if torch.any(video_start.bool()):
                     self.model.reset()
                 pred = self.model(images)
                 outputs = torch.argmax(pred, dim=1).float()
                 end = time.time() - start
-                durations.append(end)
+                if i > 3:
+                    durations.append(end * 1000)
                 if i in [58, 174, 290, 406]:  #
                     labels = labels.type(torch.uint8)
                     outputs = outputs.type(torch.uint8)
@@ -556,6 +556,7 @@ class GridTrainer:
                         cv2.imwrite(str(out_folder) + "/{}_{}_{}.png".format(self.config["model"], mode, i), image)
                 if i == 500:
                     break
+        print("durations: ", durations, "len(dur): ", len(durations))
         return mean(durations)
 
 
