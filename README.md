@@ -45,9 +45,9 @@ create a folder in the 00-APPLY-FOR-STORAGE folder, which will call a script and
 with your rz-login to store data.
 
 
-##Dataset 
+## Dataset 
 
-###Preprocessing
+### Preprocessing
 
 The preprocessing is devided into 2 steps:
 1. Clip the videos into 4 second snippets, run:  
@@ -64,8 +64,8 @@ The overall video material is very long, so preprocessing might take a while, de
 
 
 
-##Starting the training
-###On the Grid Network
+## Starting the training
+### On the Grid Network
 The easiest way to start a training job is to use the *src/train_multiple.py* script.
 Here you specify a train_config.json file that will be used to store the key informations for the training loop.
 Most important parameters to set are:
@@ -111,7 +111,7 @@ There make sure you initialize the Time_logger object in the gridtrainer class w
 e.g.: restart_time=60 * 60 * 1.25 end and restart the job before it is automatically killed.
 
 
-####Example Config:
+#### Example Config:
 ```
 models = ["Deep+_mobile"] 
 batch_sizes = 8
@@ -125,14 +125,14 @@ will call 3 Jobs that will train 3x a Deep+_mobile for 50 epochs with batch_size
 The main difference between the 3 is, that each one uses a different loss function.
 In a similiar way additional hyperparameters can be tested, but they need to be added manually and the *gridtrainer.py* file needs to be altered.
 
-###Locally
+### Locally
 Starting the training is different if you just want to train locally.
 Most of features do not work (e.g. restarting the script, starting intermediate evaluation).
 Most important is, that you have to set your 
 working directory to the "Video_Segmentation" folder and not "Video_Segmentation/src".
 
 Nevertheless, here is a small explanation on how to train locally:
-####Option 1:
+#### Option 1:
 1:
 
 execute *multiple_train.py* but comment out /delete the ``call(recall_parameter)`` line.
@@ -150,7 +150,7 @@ run train.py:
 
 `pyton src/train.py -cfg path_to_train_config.json`
 
-####Option 2:
+#### Option 2:
 1:
 
 Open gridtrainer.py and change the
@@ -167,7 +167,7 @@ It holds all the necessary objects for training and allows to train, evaluate an
 
 Make sure you read the documentation of the GridTrainer carefully.
 
-##Learning rate range test
+## Learning rate range test
 A learning rate finder implementation (see [References](#references-and-changes)) was used to determine hyperparameters.
 To start algorithm, make sure you edit *lr_starter.py*.  
 *lr_starter.py* creates a config file in the same way like *multiple_train.py* and calls the *lr_finder.py* algorithm.
@@ -180,7 +180,7 @@ In the current implementation different Weight decay values are tested, but you 
 
 To start the algorithm use:
 `qsub lr_starter.sge`
-##Evaluation
+## Evaluation
 If you want to start an evaluation independently from the train loop, you can you *eval_multiple.py*
 
 Just specify the path of the folder where all the model folders are stored 
@@ -191,7 +191,7 @@ Just specify the path of the folder where all the model folders are stored
 The results will be saved at: `src/models/trained_models/YOUR_FOLDER/unique_model_name/final_results/`
 
 
-##General Remark
+## General Remark
 This program was mainly written to enable to run a lot of models in parallel and test different settings.
 If you just want to train one of the model versions it is probably easier if you 
 just take the `src/models/network` and `src/models/recurrent_modules` folders and use `src/models/custom_deeplabs.py` 
