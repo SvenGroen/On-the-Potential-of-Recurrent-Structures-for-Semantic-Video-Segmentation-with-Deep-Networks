@@ -586,7 +586,7 @@ class GridTrainer:
 
 
 if __name__ == "__main__":
-    model = "Deep+_mobile"
+    model = "Deep_mobile_gruV6"
     batch_size = 6
     track_id = 00
     num_epochs = 10

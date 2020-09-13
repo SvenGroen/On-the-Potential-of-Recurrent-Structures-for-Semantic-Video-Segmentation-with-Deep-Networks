@@ -3,7 +3,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from src.models.recurrent_modules import *
 from src.models.network import *
-from src.models.network._deeplab import DeepLabHeadV3PlusLSTM, DeepLabHeadV3PlusGRU, DeepLabHeadV3PlusLSTMV2
+from src.models.network._deeplab import DeepLabHeadV3PlusLSTM, DeepLabHeadV3PlusGRU, DeepLabHeadV3PlusLSTMV2, \
+    DeepLabHeadV3PlusGRUV2
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -231,7 +232,7 @@ class Deeplabv3Plus_lstmV4(nn.Module):
         return out
 
 
-class Deeplabv3Plus_lstmV5(nn.Module):
+class Deeplabv3Plus_lstmV7(nn.Module):
     def __init__(self, backbone="mobilenet", keep_hidden=True):
         super().__init__()
         if backbone == "mobilenet":
@@ -297,8 +298,8 @@ class Deeplabv3Plus_lstmV5(nn.Module):
         return out
 
 
-class Deeplabv3Plus_lstmV7(nn.Module):
-    def __init__(self, backbone="mobilenet"):
+class Deeplabv3Plus_lstmV5(nn.Module):
+    def __init__(self, backbone="mobilenet", store_previous=False):
         super().__init__()
         if backbone == "mobilenet":
             self.base = deeplabv3plus_mobilenet(num_classes=2, pretrained_backbone=True)
@@ -309,7 +310,7 @@ class Deeplabv3Plus_lstmV7(nn.Module):
             in_channels = 2048
             low_level_channels = 256
         self.base.classifier = DeepLabHeadV3PlusLSTMV2(in_channels, low_level_channels, 2, [12, 24, 36],
-                                                     store_previous=True)
+                                                     store_previous=store_previous)
         self.tmp_old_pred = [None, None]
         self.tmp_hidden = None
 
@@ -517,5 +518,45 @@ class Deeplabv3Plus_gruV4(nn.Module):
         input_shape = x.shape[-2:]
         features = self.base.backbone(x)
         out = self.classifier(features)
+        out = F.interpolate(out, size=input_shape, mode='bilinear', align_corners=False)
+        return out
+
+class Deeplabv3Plus_gruV5(nn.Module):
+    def __init__(self, backbone="mobilenet", store_previous=False):
+        super().__init__()
+        if backbone == "mobilenet":
+            self.base = deeplabv3plus_mobilenet(num_classes=2, pretrained_backbone=True)
+            in_channels = 320
+            low_level_channels = 24
+        elif backbone == "resnet50":
+            self.base = deeplabv3plus_resnet50(num_classes=2, pretrained_backbone=True)
+            in_channels = 2048
+            low_level_channels = 256
+        self.base.classifier = DeepLabHeadV3PlusGRUV2(in_channels, low_level_channels, 2, [12, 24, 36],
+                                                     store_previous=store_previous)
+        self.tmp_old_pred = [None, None]
+        self.tmp_hidden = None
+
+    def detach(self):
+        pass
+
+    def reset(self):
+        self.base.classifier.hidden = [None]
+        self.base.classifier.old_pred = [None, None]
+
+    def start_eval(self):
+        self.tmp_hidden = self.base.classifier.hidden
+        self.tmp_old_pred = self.base.classifier.old_pred
+        self.reset()
+
+    def end_eval(self):
+        self.base.classifier.hidden = self.tmp_hidden
+        self.base.classifier.old_pred = self.tmp_old_pred
+        self.tmp_hidden = None
+        self.tmp_old_pred = [None, None]
+
+    def forward(self, x, *args):
+        input_shape = x.shape[-2:]
+        out = self.base(x)
         out = F.interpolate(out, size=input_shape, mode='bilinear', align_corners=False)
         return out
