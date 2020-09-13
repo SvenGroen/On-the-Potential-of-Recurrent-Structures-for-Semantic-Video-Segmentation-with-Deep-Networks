@@ -15,19 +15,16 @@ models needs to be a list containing at least one of these models:
 """
 sys.stderr.write("start writing configs\n")
 
-
 models = ["Deep_mobile_lstmV4", "Deep_resnet50_lstmV4", "Deep_mobile_gruV4", "Deep_resnet50_gruV4",
           "Deep_mobile_lstmV3", "Deep_mobile_gruV3", "Deep_resnet50_lstmV3", "Deep_resnet50_gruV3",
           "Deep_mobile_lstmV2", "Deep_mobile_gruV2", "Deep_resnet50_lstmV2", "Deep_resnet50_gruV2",
           "Deep_mobile_lstmV1", "Deep_mobile_gruV1", "Deep_resnet50_lstmV1", "Deep_resnet50_gruV1",
-          "Deep+_resnet50", "Deep+_mobile", "Deep_mobile_lstmV5", "Deep_mobile_lstmV6", "Deep_mobile_lstmV7"]
-
-models = ["Deep_resnet50_lstmV4"]
+          "Deep+_resnet50", "Deep+_mobile"]
 
 batch_sizes = 8
-num_epochs = 100
+num_epochs = 50
 loss = ["SoftDice"]  # "CrossEntropy"
-eval_steps = 5
+eval_steps = 2
 
 config_paths = []
 models_name = []
@@ -37,13 +34,13 @@ configs = []
 for model in models:
 
     for i in range(len(loss)):
-        config = {}
-        config["model"] = model
-        config["batch_size"] = batch_sizes
-        config["num_epochs"] = num_epochs
-        config["evaluation_steps"] = eval_steps
-        config["loss"] = loss[i]
-        config["save_folder_path"] = "src/models/trained_models/yt_fullV5/"
+        config = {
+            "model": model,
+            "batch_size": batch_sizes,
+            "num_epochs": num_epochs,
+            "evaluation_steps": eval_steps,
+            "loss": loss[i],
+            "save_folder_path": "src/models/trained_models/yt_fullV5/"}
         configs.append(config)
 
 # start to call a job for each config file
