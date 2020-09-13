@@ -44,8 +44,11 @@ To create your own folder do:
 create a folder in the 00-APPLY-FOR-STORAGE folder, which will call a script and after some time you will have a folder
 with your rz-login to store data.
 
+
 ##Dataset 
+
 ###Preprocessing
+
 The preprocessing is devided into 2 steps:
 1. Clip the videos into 4 second snippets, run:  
 `src/4sec_preprocess.py`
