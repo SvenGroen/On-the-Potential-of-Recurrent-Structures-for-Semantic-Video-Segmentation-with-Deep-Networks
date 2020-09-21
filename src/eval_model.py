@@ -52,21 +52,23 @@ from subprocess import call
 with open(str(args.path + "/System_information.txt"), "w") as txt_file:
     txt_file.write("System Information:\n{}\n".format(getSystemInfo()))
     # txt_file.write("Pip list:\n{}\n".format([p.project_name for p in pkg_resources.working_set]))
-    call("pip list >> System_information.txt", shell=True)
+    call("pip list >> {}/System_information.txt".format(args.path), shell=True)
 
 load = torch.cuda.is_available()  # load data only if executed on grid.
-out = args.path + "/intermediate_results" if not args.final else args.path + "/final_results"
+out = args.path + "/intermediate_results" if not args.final else args.path + "/final_results_best_val"
 # First evaluate on Train set and afterwards on validation dataset
 train_trainer = GridTrainer(config=config, train=True, batch_size=1, load_from_checkpoint=load)
 train_trainer.eval(random_start=args.random,
                    eval_length=args.steps if not args.final else len(train_trainer.dataset), save_file_path=out,
-                   load_most_recent=load, checkpoint="checkpoint.pth.tar", final=args.final)
+                   load_most_recent=load, checkpoint="best_checkpoint.pth.tar" if args.final else "checkpoint.pth.tar",
+                   final=args.final)
 val_trainer = GridTrainer(config=config, train=False, batch_size=1, load_from_checkpoint=load)
 val_trainer.eval(random_start=args.random,
                  eval_length=args.steps if not args.final else len(val_trainer.dataset), save_file_path=out,
-                 load_most_recent=load, checkpoint="checkpoint.pth.tar", final=args.final)
+                 load_most_recent=load, checkpoint="best_checkpoint.pth.tar" if args.final else "checkpoint.pth.tar",
+                 final=args.final)
 path = config["save_files_path"] + "/metrics.pth.tar" if not args.final else out + "/metrics.pth.tar"
-metric_logger = torch.load(config["save_files_path"] + "/metrics.pth.tar", map_location=device)
+metric_logger = torch.load(path, map_location=device)
 
 visualize_metric(metric_log=metric_logger, step_size=config["evaluation_steps"],
                  epoch=train_trainer.logger["epochs"][-1],
@@ -75,32 +77,33 @@ visualize_metric(metric_log=metric_logger, step_size=config["evaluation_steps"],
 current = metric_logger["val"][-1]["Mean IoU"].avg
 best = 0
 sys.stderr.write(f"\ncurrent: {current}\n")
-try:
-    checkpoint = torch.load(train_trainer.config["save_files_path"] + "/best_checkpoint.pth.tar",
-                            map_location=train_trainer.device)
-    best = checkpoint["current_best"]
-    sys.stderr.write(f"\nbest: {best}\n")
-except IOError:
-    best = current
+if not args.final:
+    try:
+        checkpoint = torch.load(train_trainer.config["save_files_path"] + "/best_checkpoint.pth.tar",
+                                map_location=train_trainer.device)
+        best = checkpoint["current_best"]
+        sys.stderr.write(f"\nbest: {best}\n")
+    except IOError:
+        best = current
 
-sys.stderr.write(f"\ncurrent and  best: {current}\t{best}\n")
+    sys.stderr.write(f"\ncurrent and  best: {current}\t{best}\n")
 
-if current >= best:
-    train_trainer.logger["current_best"] = current
-    torch.save(train_trainer.logger, train_trainer.config["save_files_path"] + "/best_checkpoint.pth.tar")
+    if current >= best:
+        train_trainer.logger["current_best"] = current
+        torch.save(train_trainer.logger, train_trainer.config["save_files_path"] + "/best_checkpoint.pth.tar")
 
 
-current_train = metric_logger["train"][-1]["Mean IoU"].avg
-best_train = 0
-try:
-    checkpoint_train = torch.load(train_trainer.config["save_files_path"] + "/best_checkpoint_train.pth.tar",
-                                  map_location=train_trainer.device)
-    best_train = checkpoint_train["current_best_train"]
-    best_train = current_train if isinstance(best_train, list) else current_train
-    sys.stderr.write(f"\nbest: {best_train}\n")
-except IOError:
-    best_train = current_train
+    current_train = metric_logger["train"][-1]["Mean IoU"].avg
+    best_train = 0
+    try:
+        checkpoint_train = torch.load(train_trainer.config["save_files_path"] + "/best_checkpoint_train.pth.tar",
+                                      map_location=train_trainer.device)
+        best_train = checkpoint_train["current_best_train"]
+        best_train = current_train if isinstance(best_train, list) else current_train
+        sys.stderr.write(f"\nbest: {best_train}\n")
+    except IOError:
+        best_train = current_train
 
-if current_train >= best_train:
-    train_trainer.logger["current_best"] = current_train
-    torch.save(train_trainer.logger, train_trainer.config["save_files_path"] + "/best_checkpoint_train.pth.tar")
+    if current_train >= best_train:
+        train_trainer.logger["current_best"] = current_train
+        torch.save(train_trainer.logger, train_trainer.config["save_files_path"] + "/best_checkpoint_train.pth.tar")

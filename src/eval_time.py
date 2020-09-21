@@ -21,8 +21,10 @@ for folder in model_path.glob("*"):
     print("new folder:", folder)
     if not os.path.isdir(folder):
         continue
-    if "V5" in str(folder) or "V6" in str(folder) or "V7" in str(folder):
+    if not ("V1" in str(folder) or "V3" in str(folder)):#"V2" in str(folder) or "V4" in str(folder) or "Deep+" in str(folder)
+        #"V1" in str(folder) or "V3" in str(folder)
         continue
+
     try:
         with open(folder / "train_config.json") as js:
             config = json.load(js)
@@ -44,9 +46,8 @@ for folder in model_path.glob("*"):
     except Exception as e:
         print(e)
         continue
-
-
-    time_taken = train_trainer.time_and_image_eval()
+    sys.stderr.write("\nstarting train:")
+    time_taken = train_trainer.time_and_image_eval(checkpoint="best_checkpoint.pth.tar")
     del train_trainer
     mode = "resnet" if "resnet" in config["model"] else "mobile"
     rows.append([label, mode, time_taken])
@@ -54,9 +55,13 @@ for folder in model_path.glob("*"):
         val_trainer = GridTrainer(config=config, train=False, batch_size=1,
                                   load_from_checkpoint=True)
         val_trainer.dataset.apply_transform = False
+
+        sys.stderr.write("\nstarting val:")
+        val_trainer.time_and_image_eval(checkpoint="best_checkpoint.pth.tar")
     except Exception as e:
         print(e)
         continue
+
     del val_trainer
     torch.cuda.empty_cache()
 
@@ -69,7 +74,7 @@ df = pd.DataFrame({'mobile': list(mobile),
                    'resnet': list(resnet)}, index=index)
 df = df.sort_index()
 df.to_csv(model_path / "time_results.csv")
-ax = df.round(3).plot.bar(rot=0, figsize=(20, 5))
+ax = df.round(3).plot.bar(rot=0, figsize=(18, 8))
 for p in ax.patches:
     ax.annotate(np.round(p.get_height(), decimals=2), (p.get_x() + p.get_width() / 2., p.get_height()), ha='center',
                 va='center', xytext=(0, 10), textcoords='offset points')

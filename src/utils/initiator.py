@@ -20,7 +20,6 @@ def initiate_model(config):
         wd = 0
     elif config["model"] == "Deep_mobile_lstmV2":
         net = Deeplabv3Plus_lstmV2(backbone="mobilenet", activate_3d=False)
-
         upper_lr_bound = 1e-3
         lower_lr_bound = 8e-5
         wd = 0
@@ -71,14 +70,14 @@ def initiate_model(config):
         wd = 0
     elif config["model"] == "Deep_mobile_gruV5":
         net = Deeplabv3Plus_gruV5(backbone="mobilenet", store_previous=False)
-        upper_lr_bound = 4e-2
+        upper_lr_bound = 1e-3
         lower_lr_bound = 2e-6
-        wd = 0
+        wd = 1e-8
     elif config["model"] == "Deep_mobile_gruV6":
         net = Deeplabv3Plus_gruV5(backbone="mobilenet", store_previous=True)
         upper_lr_bound = 4e-2
-        lower_lr_bound = 2e-6
-        wd = 0
+        lower_lr_bound = 8e-6
+        wd = 1e-8
     elif config["model"] == "Deep+_resnet50":
         net = Deeplabv3Plus_base(backbone="resnet50")
         upper_lr_bound = 1e-3
@@ -136,12 +135,12 @@ def initiate_model(config):
         wd = 0
     elif config["model"] == "Deep_resnet50_gruV5":
         net = Deeplabv3Plus_gruV5(backbone="resnet50", store_previous=False)
-        upper_lr_bound = 4e-2
+        upper_lr_bound = 1e-3
         lower_lr_bound = 2e-6
         wd = 0
     elif config["model"] == "Deep_resnet50_gruV6":
         net = Deeplabv3Plus_gruV5(backbone="resnet50", store_previous=True)
-        upper_lr_bound = 4e-2
+        upper_lr_bound = 1e-3
         lower_lr_bound = 2e-6
         wd = 0
     else:

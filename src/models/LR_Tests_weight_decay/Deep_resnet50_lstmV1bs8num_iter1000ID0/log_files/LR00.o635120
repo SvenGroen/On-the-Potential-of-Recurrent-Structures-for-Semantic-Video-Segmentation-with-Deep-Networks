@@ -1,0 +1,14 @@
+ Start of SGE job 
+
+
+Hostname
+vector.cv.uni-osnabrueck.de
+Job-ID:
+635121
+user:
+sgroen
+
+Start
+
+RUNNING:  src/lr_finder.py
+Current Environemt:  torch

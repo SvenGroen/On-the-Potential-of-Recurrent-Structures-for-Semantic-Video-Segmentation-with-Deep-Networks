@@ -1,0 +1,14 @@
+ Start of SGE job 
+
+
+Hostname
+charleston.ni.uni-osnabrueck.de
+Job-ID:
+635123
+user:
+sgroen
+
+Start
+
+RUNNING:  src/lr_finder.py
+Current Environemt:  torch

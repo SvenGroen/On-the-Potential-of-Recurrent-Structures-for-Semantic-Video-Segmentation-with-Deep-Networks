@@ -9,12 +9,17 @@ Starts the lr_finder script. Works like the train_multiple.py script.
 """
 
 models = ["Deep_mobile_lstmV6", "Deep_mobile_lstmV7", "Deep_mobile_lstmV1", "Deep_mobile_lstmV2",
-          "Deep_mobile_lstmV3", "Deep_mobile_lstmV4", "Deep_mobile_lstmV5", "Deep_mobile_gruV1", "Deep_mobile_gruV2", "Deep_mobile_gruV3",
+          "Deep_mobile_lstmV3", "Deep_mobile_lstmV4", "Deep_mobile_lstmV5", "Deep_mobile_gruV1", "Deep_mobile_gruV2",
+          "Deep_mobile_gruV3",
           "Deep_mobile_gruV4", "Deep+_resnet50", "Deep_resnet50_lstmV1", "Deep_resnet50_lstmV2",
           "Deep_resnet50_lstmV3", "Deep_resnet50_lstmV4", "Deep_resnet50_gruV1", "Deep_resnet50_gruV2",
           "Deep_resnet50_gruV3", "Deep_resnet50_gruV4"]
 
-
+models = ["Deep_resnet50_lstmV1", "Deep_resnet50_lstmV2", "Deep_resnet50_lstmV3", "Deep_resnet50_lstmV4", "Deep_resnet50_gruV1", "Deep_resnet50_gruV2",
+          "Deep_resnet50_gruV3", "Deep_resnet50_gruV4","Deep_mobile_gruV1", "Deep_mobile_gruV2",
+          "Deep_mobile_gruV3", "Deep_mobile_lstmV1", "Deep_mobile_lstmV2",
+          "Deep_mobile_lstmV3", "Deep_mobile_lstmV4", "Deep+_resnet50", "Deep+_mobile",
+          "Deep_mobile_gruV4"]
 configs = []
 for model in models:
     config = {}
@@ -24,7 +29,7 @@ for model in models:
     config["num_epochs"] = 1000
     config["evaluation_steps"] = 2
     config["loss"] = "SoftDice"
-    config["save_folder_path"] = "src/models/LR_Tests_wd/no_3d_2/"  # bs_" + str(config["batch_size"])
+    config["save_folder_path"] = "src/models/LR_Tests_batch_size/"  # bs_" + str(config["batch_size"])
 
     # print(config)
     configs.append(config)

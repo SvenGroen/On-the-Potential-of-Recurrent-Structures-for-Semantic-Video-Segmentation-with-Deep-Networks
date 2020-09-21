@@ -4,12 +4,12 @@
 #$ -cwd
 #$ -l cuda=1
 #$ -pe default 1
-#$ -l h_rt=01:29:00
-#$ -l hostname=*grid*
+#$ -l h_rt=04:29:00
 #$ -l cuda=1
 #$ -m n
 
 
+# -l hostname=*grid02*
 echo " Start of SGE job "
 echo "$date"
 # Identify Job-ID

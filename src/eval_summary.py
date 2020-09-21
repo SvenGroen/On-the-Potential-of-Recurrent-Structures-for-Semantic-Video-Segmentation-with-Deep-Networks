@@ -57,11 +57,11 @@ model_path = Path("src/models/trained_models/yt_fullV4")
 
 results = []
 for folder in model_path.glob("*"):
-    if "Metric" in str(folder) or "lstmV6" in str(folder):
+    if "Metric" in str(folder) or "V6" in str(folder) or "V5" in str(folder) or "V7" in str(folder):
         continue
     if not os.path.isdir(folder):
         continue
-    eval_folder = folder / "final_results"
+    eval_folder = folder / "final_results_best_val"
 
     print(folder)
     metric_results = torch.load(folder / "final_results_recent/metrics.pth.tar", map_location="cpu",)
