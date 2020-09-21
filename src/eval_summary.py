@@ -39,7 +39,7 @@ def autolabel(rects, ax, percentage=True, base=None):
         if base is not None:
             change = get_change(height, base)
             if change == 0:
-                text = '{}'.format(height)
+                text = '{}%'.format(height*100)
             else:
                 text = '{:+}'.format(round(change, 2)) + "%"
 
@@ -52,19 +52,21 @@ def autolabel(rects, ax, percentage=True, base=None):
 
 
 # path where the models are saved
-model_path = Path("src/models/trained_models/yt_fullV4")
-(model_path / "Metric_Results").mkdir(parents=True, exist_ok=True)
+model_path = Path("src/models/trained_models/yt_fullV4_probably_use")
+out_name = "Metric_Results_17_09"
+(model_path / out_name).mkdir(parents=True, exist_ok=True)
 
 results = []
 for folder in model_path.glob("*"):
-    if "Metric" in str(folder) or "lstmV6" in str(folder):
+    #or "lstmV6" in str(folder) or "V5" in str(folder)
+    if "Metric" in str(folder) or "lstmV6" in str(folder) or "V5" in str(folder) or "V7" in str(folder):
         continue
     if not os.path.isdir(folder):
         continue
-    eval_folder = folder / "final_results"
+
 
     print(folder)
-    metric_results = torch.load(folder / "final_results_recent/metrics.pth.tar", map_location="cpu",)
+    metric_results = torch.load(folder / "final_results_prob_use/metrics.pth.tar", map_location="cpu", )
     with open(folder / "train_config.json") as js:
         config = json.load(js)
 
@@ -98,11 +100,12 @@ for mode in ["train", "val"]:
                 else:
                     data[category].append(model[mode][-1][category].avg)
     df = pd.DataFrame.from_dict(data)
+
     df["Mode"] = mode
     dfs.append(df)
 
-    mobile_df = df[df["model_class"] == "mobile"]
-    resnet_df = df[df["model_class"] != "mobile"]
+    mobile_df = df[df["model_class"] == "mobile"].sort_values(by=["Label"])
+    resnet_df = df[df["model_class"] != "mobile"].sort_values(by=["Label"])
 
     categorys = ["Mean IoU", "Pixel Accuracy", "Per Class Accuracy", "Dice", "num_params",
                  "Time_taken"]  # , "time_in_ms"
@@ -115,16 +118,16 @@ for mode in ["train", "val"]:
                 'horizontalalignment': "center"}
 
     # create one Matplot figure with multiple bar char
-    tmp = [(0, 0), (0, 1), (1, 0), (1, 1), (0, 2), (1, 2)]
+    tmp = [(0, 0), (0, 1), (1, 0), (1, 1)]
     for name, df in [("mobile", mobile_df), ("resnet", resnet_df)]:  # ,
-        (model_path / "Metric_Results" / name).mkdir(parents=True, exist_ok=True)
-        f, ax = plt.subplots(2, 4, figsize=(50, 20))
+        (model_path / out_name / name).mkdir(parents=True, exist_ok=True)
+        f, ax = plt.subplots(2, 3, figsize=(50, 20))
         for pos, category in zip(tmp, metrics):
             ax[pos].set_ylim([0, 1])
             ax[pos].bar(df["Label"], df[category])
             ax[pos].axhline(y=float(df[category][df["Label"] == "base"]), xmin=-0, xmax=1, color="r")
             ax[pos].set_title(category, fontdict=fontdict)
-            f.savefig(model_path / "Metric_Results" / name / str(name + "_" + mode + ".png"))
+            f.savefig(model_path / out_name / name / str(name + "_" + mode + ".png"))
         plt.close(fig=f)
     bars = []
 
@@ -136,30 +139,33 @@ for mode in ["train", "val"]:
             f_new, ax_new = plt.subplots(figsize=(50, 20))
             bar = ax_new.bar(df["Label"], df[category])
             ax_new.axhline(y=base_performance, xmin=-0, xmax=1, color="r")
+            ax_new.set_ylim([0, 1])
             ax_new.set_title(category, fontdict=fontdict)
             autolabel(bar, ax=ax_new, base=base_performance)  # , base=base_performance
             plt.xticks(fontsize=25)
             plt.yticks(fontsize=25)
-            f_new.savefig(model_path / "Metric_Results" / name / str(category + "_" + mode + ".png"))
+            f_new.savefig(model_path / out_name / name / str(category + "_" + mode + ".png"))
 
             plt.close(fig=f_new)
 
 result = pd.concat(dfs)
-result.round(4).to_csv(model_path / "Metric_Results" / "metric_results.csv", sep=";")
-result.round(4).reset_index().to_json(model_path / "Metric_Results" / "metric_results.json")
+result.round(4).to_csv(model_path / out_name / "metric_results.csv", sep=";")
+result.round(4).reset_index().to_json(model_path / out_name / "metric_results.json")
 
 # create latex tables based on pandas Dataframes (need to be adjusted)
 
 train = result["Mode"] == "train"
 mobile = result["model_class"] == "mobile"
 resnet = result["model_class"] == "resnet"
-metrics = ["Mean IoU", "Pixel Accuracy", "Per Class Accuracy", "Dice"]
+metrics = ["Mean IoU", "Dice", "Pixel Accuracy", "Per Class Accuracy"]
 df_resnet = pd.DataFrame(result[resnet], columns=["Label", "Mode"] + metrics)
 df_mobile = pd.DataFrame(result[mobile], columns=["Label", "Mode"] + metrics)
+df_resnet[metrics] = df_resnet[metrics] * 100
+df_mobile[metrics] = df_mobile[metrics] * 100
 df_mobile = df_mobile.set_index(["Label", "Mode"]).unstack()
 df_resnet = df_resnet.set_index(["Label", "Mode"]).unstack()
-print(df_mobile.round(4).to_latex(index=True, multirow=True, multicolumn=True))
-print(df_resnet.round(4).to_latex(index=True, multirow=True, multicolumn=True))
+print(df_mobile.round(2).to_latex(index=True, multirow=True, multicolumn=True))
+print(df_resnet.round(2).to_latex(index=True, multirow=True, multicolumn=True))
 
 df_param = pd.DataFrame(result[train & mobile], columns=["Label", "model_class", "num_params"])
 df_param["percentage"] = df_param["num_params"].pct_change()

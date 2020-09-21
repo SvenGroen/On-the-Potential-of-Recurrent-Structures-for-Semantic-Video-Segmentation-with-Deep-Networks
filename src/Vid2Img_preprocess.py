@@ -59,7 +59,6 @@ for split in ["train", "test"]:
     bgpath = Path("src/dataset/data/images/backgrounds") / split
 
     for f in files:
-        sys.stderr.write(str(f))
         shutil.copy(f, str(bgpath))
     label_out_path = out_path / "labels"
     input_out_path = out_path / "input"
@@ -98,6 +97,7 @@ for split in ["train", "test"]:
                 out_log["labels"].append((str(label_out_path / out_name), int(new_vid_marker)))
                 frame_counter += 1
                 new_vid_marker = False
+
             else:
                 break
         cap_inp.release()

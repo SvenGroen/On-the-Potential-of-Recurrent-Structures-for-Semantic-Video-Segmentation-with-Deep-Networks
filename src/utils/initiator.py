@@ -20,7 +20,6 @@ def initiate_model(config):
         wd = 0
     elif config["model"] == "Deep_mobile_lstmV2":
         net = Deeplabv3Plus_lstmV2(backbone="mobilenet", activate_3d=False)
-
         upper_lr_bound = 1e-3
         lower_lr_bound = 8e-5
         wd = 0

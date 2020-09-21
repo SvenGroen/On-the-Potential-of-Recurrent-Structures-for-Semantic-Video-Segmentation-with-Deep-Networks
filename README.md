@@ -44,8 +44,12 @@ To create your own folder do:
 create a folder in the 00-APPLY-FOR-STORAGE folder, which will call a script and after some time you will have a folder
 with your rz-login to store data.
 
-##Dataset 
-###Preprocessing
+## Dataset 
+To execute the preprocessing you need to have the greenscreen video files, they can be downloaded from:  
+https://1drv.ms/u/s!ArepTJH0abV3j48E4RuCNeynlcfjSg?e=AyxPwL  (~5GB)  
+place the "YT_originals" folder into: *src/dataset/videos/* (see folder structure in [preprocessing](#preprocessing))
+
+### Preprocessing
 The preprocessing is devided into 2 steps:
 1. Clip the videos into 4 second snippets, run:  
 `src/4sec_preprocess.py`
@@ -59,7 +63,43 @@ but make sure you change the "setup_file" variable after the first preprocessing
 
 The overall video material is very long, so preprocessing might take a while, depending on your hardeware resources.
 
+folder structure:
 
+```
+src/
+|
+|---dataset/
+|     |           
+|     |---YT_Greenscreen.py # the dataset class 
+|     |---data/
+|     |     |
+|     |     |---images/
+|     |     |     |
+|     |     |     |---backgrounds/
+|     |     |     |         |---all/ # contains all posibile background images
+|     |     |     |         |---train/ # subset of all, randomly selected images (during preprocess)
+|     |     |     |         |---test/ # subset of all, randomly selected images (during preprocess), no overlap with train
+|     |     |     |
+|     |     |     |---YT_4sec/
+|     |     |     |         |
+|     |     |     |         |---train/
+|     |     |     |         |       |---out_log.json # path to all images (used in dataset class to load all images, contains a flag that indicates whether a new 4 second video clip starts    
+|     |     |     |         |       |---labels/ # folder containing all Ground truth images    
+|     |     |     |         |       |---input/ # folder containing all input images with the replaced background
+|     |     |     |         |---test/ # same structure like train/ but with the test dataset images
+|     |     |
+|     |     |---videos/
+|     |     |     | 
+|     |     |     |---YT_originals/
+|     |     |     |         |
+|     |     |     |         |---train/ # contains all raw training mp4 files
+|     |     |     |         |---test/ # contains all raw testing mp4 files
+|     |     |     | 
+|     |     |     |---YT_4sec/
+|     |     |     |         |
+|     |     |     |         |---train/input # contains all training mp4 files but cut into 4 seconds snippets
+|     |     |     |         |---test/input # contains all raw testing mp4 files but cut into 4 seconds snippets
+```
 
 ##Starting the training
 ###On the Grid Network
@@ -85,8 +125,50 @@ To start the job cd into src/ and run:
 In the picture below you can see which scripts the multiple_train file is calling and how they interact:
 ![Overview multiple_train](installation-graphics/multiple_train.png)
 
-Even if you want to start just a single job i suggest to use the multiple_train script, which makes the creation of the config file
-(which needs to be fed to the train.py file) much easier.
+Even if you want to start just a single job I suggest to use the multiple_train script, 
+which handles the creation of the config file (which needs to be fed to the train.py file) much easier.
+In addition to that it takes care of the correct folder structure, which should look like this:
+
+```
+src/
+|
+|---models/
+|     |           
+|     |---trained_models/
+|     |           |
+|     |           |---YOUR_FOLDER/ # name needs to be specified in train_multiple.py 
+|     |           |       |
+|     |           |       |-------unique_model_name_ID00/
+|     |           |       |                 |
+|     |           |       |                 |---log_files/ # in this directory all your log files are saved
+|     |           |       |                 |---intermediate_results/ # saves intermediate metric results
+|     |           |       |                 |---final_results/ # saves final metric results
+|     |           |       |                 |---train_config.json # training config of the model
+|     |           |       |                 |---checkpoint.pth.tar # latest model state checkpoint for reloading
+|     |           |       |                 |---best_checkpoint.pth.tar # model state with higher MIoU on validation dataset
+|     |           |       |                 |---best_checkpoint_train.pth.tar # model state with higher MIoU on training dataset
+|     |           |       |                 |---metrics.pth.tar # latest evaluation results
+|     |           |       |                 |---Loss_Epoch.jpg # Loss vs.Epoch plot
+|     |           |       |                 |---Learning_Rate_Epoch.jpg # LR-scheduler plot
+|     |           |       |                 |---Mean IoU_Epoch.jpg # MIoU vs.Epoch plot
+|     |           |       |                 |---System_information.txt # saves some information about the computer the model was run on (Linux/Python version, etc.)
+|     |           |       |-------unique_model_name_ID01/
+|     |           |       |-------unique_model_name_ID_N/
+|     |           |       |-------Metric_Results/ # will be created by eval_summary.py and saves plots about the metrices of all models in YOUR_FOLDER
+|     |           |       |-------time_results.png/ # created by eval_time.py, plot of inference time for each model used in YOUR_FOLDER
+|     |           |       |-------time_results.csv/ # created by eval_time.py, data of inference time for each model used in YOUR_FOLDER
+|     |           
+|     |---LR_Tests_NAME/ # chose name in lr_starter.py 
+|     |         |
+|     |         |---[YOUR_SUBFOLDER (e.g. WD_Analysis] # optional
+|     |         |           |
+|     |         |           |-------unique_model_name_A/ # same structure like in trained_models/ with log_files and train_config.json
+|     |         |           |               |
+|     |         |           |               |---lr_analysis.png # plot of learning rate range test for different hyperparameters
+
+
+```
+
 #### Parameter adjustment of the sge files
 The sge files contain several parameters that need to be adjusted and changed, depending on your needs and access right on the IKW Grid:
 Most of the parameters probably don't need to be changed, however, for some it may be usefull:
@@ -177,6 +259,22 @@ In the current implementation different Weight decay values are tested, but you 
 
 To start the algorithm use:
 `qsub lr_starter.sge`
+
+folder structure:
+
+```
+src/
+|
+|---models/
+|     |         
+|     |---LR_Tests_NAME/ # chose name in lr_starter.py 
+|     |         |
+|     |         |---[YOUR_SUBFOLDER (e.g. WD_Analysis] # optional
+|     |         |           |
+|     |         |           |-------unique_model_name_A/ # same structure like in trained_models/ with log_files and train_config.json
+|     |         |           |               |
+|     |         |           |               |---lr_analysis.png # plot of learning rate range test for different hyperparameters
+```
 ##Evaluation
 If you want to start an evaluation independently from the train loop, you can you *eval_multiple.py*
 
