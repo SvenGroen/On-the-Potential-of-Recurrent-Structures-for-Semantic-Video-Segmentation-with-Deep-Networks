@@ -1,1 +1,0 @@
-{"model": "Deep_mobile_lstmV5_2", "weight_decay": 0, "batch_size": 6, "num_epochs": 100, "evaluation_steps": 2, "loss": "CrossDice", "save_folder_path": "src/models/LR_Tests/bs_6", "track_ID": 6, "unique_name": "Deep_mobile_lstmV5_2bs6num_iter100ID6", "save_files_path": "src\\models\\LR_Tests\\bs_6\\Deep_mobile_lstmV5_2bs6num_iter100ID6"}

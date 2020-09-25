@@ -6,10 +6,19 @@ from pathlib import Path
 import os
 import sys
 sys.stderr.write("CWD: {}\n".format(os.getcwd()))
+"""
+Preprocessing step 1:
+splits the Video files into 4 seconds snippets
+"""
 
 random.seed(12345)
 np.random.seed(12345)
 def add_noise(image):
+    """
+    add gausian noise
+    :param image: image where noise is to be added
+    :return: noisy image
+    """
     row, col, ch = image.shape
     mean = 0
     # var = 0.1
@@ -19,12 +28,8 @@ def add_noise(image):
     noisy = image + gauss
     return noisy
 
-
-
 output_size = (int(2048 / 4), int(1080 / 4))
 fps = 29
-lower_green = np.array([0, 150, 0])
-upper_green = np.array([150, 255, 150])
 MAX_DURATION = 4
 
 splits = ["train", "test"]
@@ -46,8 +51,6 @@ for split in splits:
         total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         frame_rate = int(cap.get(cv2.CAP_PROP_FPS))
         cap.set(cv2.CAP_PROP_FPS, fps)
-        print("old frame rate: {}; new frame rate: {}".format(frame_rate, fps))
-        print("max frames: ", total_frames)
         start = True
         frame_counter = 0
         starter_frame = 0
@@ -75,11 +78,7 @@ for split in splits:
                 out_input.write(np.uint8(frame))
 
                 frame_counter += 1
-                # cv2.imshow('frame', frame)
-                # if cv2.waitKey(1) & 0xFF == ord('q'):
-                #     break
             else:
                 break
         cap.release()
         out_input.release()
-

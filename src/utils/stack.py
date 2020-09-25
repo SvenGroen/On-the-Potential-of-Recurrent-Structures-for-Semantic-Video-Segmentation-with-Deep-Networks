@@ -5,6 +5,11 @@ from torch.autograd import Variable
 
 
 def vstack(images):
+    """
+    stack images on vertical axis
+    :param images: list of images to be stacked
+    :return: the stacked images as one image
+    """
     if len(images) == 0:
         raise ValueError("Need 0 or more images")
 
@@ -22,6 +27,11 @@ def vstack(images):
 
 
 def hstack(images):
+    """
+    stack images on horizontal axis
+    :param images: list of images to be stacked
+    :return: the stacked images as one image
+    """
     if len(images) == 0:
         raise ValueError("Need 0 or more images")
 

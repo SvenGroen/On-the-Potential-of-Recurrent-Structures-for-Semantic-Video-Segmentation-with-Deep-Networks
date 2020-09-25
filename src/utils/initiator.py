@@ -4,12 +4,20 @@ from src.models.custom_deeplabs import *
 from src.utils import SegLoss
 import torch
 
+"""
+Functions return parameters for specific configurations.
+For the model initializations, for loss functions and the logger
+"""
+
 def initiate_model(config):
-    detach_interval = 1
+    """
+    Choses hyperparameter values based on the model chosen
+    :param config: config file that contains the name of the model
+    :return: the network, weight decay, (lower, upper lr bound), detach interval
+    """
+    detach_interval = 1  # detach the hidden state every n episodes
     if config["model"] == "Deep+_mobile":
         net = Deeplabv3Plus_base(backbone="mobilenet")
-        # upper_lr_bound = 1e-2
-        # lower_lr_bound = upper_lr_bound / 6
         upper_lr_bound = 1e-3
         lower_lr_bound = 1e-5
         wd = 1e-8
@@ -70,14 +78,14 @@ def initiate_model(config):
         wd = 0
     elif config["model"] == "Deep_mobile_gruV5":
         net = Deeplabv3Plus_gruV5(backbone="mobilenet", store_previous=False)
-        upper_lr_bound = 4e-2
+        upper_lr_bound = 1e-3
         lower_lr_bound = 2e-6
-        wd = 0
+        wd = 1e-8
     elif config["model"] == "Deep_mobile_gruV6":
         net = Deeplabv3Plus_gruV5(backbone="mobilenet", store_previous=True)
         upper_lr_bound = 4e-2
-        lower_lr_bound = 2e-6
-        wd = 0
+        lower_lr_bound = 8e-6
+        wd = 1e-8
     elif config["model"] == "Deep+_resnet50":
         net = Deeplabv3Plus_base(backbone="resnet50")
         upper_lr_bound = 1e-3
@@ -135,12 +143,12 @@ def initiate_model(config):
         wd = 0
     elif config["model"] == "Deep_resnet50_gruV5":
         net = Deeplabv3Plus_gruV5(backbone="resnet50", store_previous=False)
-        upper_lr_bound = 4e-2
+        upper_lr_bound = 1e-3
         lower_lr_bound = 2e-6
         wd = 0
     elif config["model"] == "Deep_resnet50_gruV6":
         net = Deeplabv3Plus_gruV5(backbone="resnet50", store_previous=True)
-        upper_lr_bound = 4e-2
+        upper_lr_bound = 1e-3
         lower_lr_bound = 2e-6
         wd = 0
     else:
@@ -157,6 +165,12 @@ def initiate_model(config):
 
 
 def initiate_criterion(config):
+    """
+    either Dice loss, Focal loss, CrossEntropy or CrossDice (mix of Dice loss and Cross entropy)
+
+    :param config: configuration files that contains the loss functions name
+    :return: loss criterion
+    """
     if config["loss"] == "SoftDice":
         criterion = SegLoss.dice_loss.SoftDiceLoss(smooth=0.0001, apply_nonlin=torch.nn.Softmax(dim=1))
     elif config["loss"] == "Focal":
@@ -171,6 +185,9 @@ def initiate_criterion(config):
 
 
 def initiate_logger(lr):
+    """
+    configures logger
+    """
     logger = defaultdict(list)
     logger["epochs"].append(0)
     logger["lrs"].append(lr)

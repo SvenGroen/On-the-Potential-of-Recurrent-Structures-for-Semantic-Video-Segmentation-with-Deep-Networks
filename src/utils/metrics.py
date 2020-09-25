@@ -4,7 +4,9 @@ from torch.autograd import Variable
 import subprocess
 import subprocess
 EPS = 1e-6
-
+"""
+contains
+"""
 
 def get_gpu_memory_map():
     """Get the current gpu usage.
@@ -171,6 +173,9 @@ def make_one_hot(labels, C=2):
     return target.to(device)
 
 class AverageMeter(object):
+    """
+    used to store values and valvulate the average
+    """
     def __init__(self):
         self.reset()
 

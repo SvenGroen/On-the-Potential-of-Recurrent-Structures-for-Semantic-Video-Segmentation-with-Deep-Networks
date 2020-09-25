@@ -8,9 +8,20 @@ from src.models.network._deeplab import DeepLabHeadV3PlusLSTM, DeepLabHeadV3Plus
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
+"""
+This File contains all Deeplab alternations.
+contains:
+V1 - 5 for lstm and gru
+(V6 is created through different V5 initialization)
+"""
 
 # BASE
 class Deeplabv3Plus_base(nn.Module):
+    """
+    base model with either a mobilenet or resnet backbone.
+
+    :param backbone: mobilenet or resnet50
+    """
     def __init__(self, backbone="mobilenet"):
         super().__init__()
         if backbone == "mobilenet":
@@ -35,10 +46,11 @@ class Deeplabv3Plus_base(nn.Module):
 
 # --- LSTMs ---
 
-
-
-
 class Deeplabv3Plus_lstmV1(nn.Module):
+    """
+    Base model with lstm that receives no additional timesteps.
+    Lstm is located at the end of the model.
+    """
     def __init__(self, backbone="mobilenet"):
         super().__init__()
         if backbone == "mobilenet":
@@ -75,9 +87,12 @@ class Deeplabv3Plus_lstmV1(nn.Module):
         self.hidden = [tuple(state.detach() for state in i) for i in self.hidden]
         return out[-1].squeeze(1)
 
-
 class Deeplabv3Plus_lstmV2(nn.Module):
-    def __init__(self, backbone="mobilenet", activate_3d=False):
+    """
+    Base model with lstm that receives 2 additional timesteps.
+    Lstm is located at the end of the model.
+    """
+    def __init__(self, backbone="mobilenet"):
         super().__init__()
         if backbone == "mobilenet":
             self.base = deeplabv3plus_mobilenet(num_classes=2, pretrained_backbone=True)
@@ -87,18 +102,7 @@ class Deeplabv3Plus_lstmV2(nn.Module):
         self.lstm = ConvLSTM(input_dim=2, hidden_dim=[2], kernel_size=(3, 3), num_layers=1, batch_first=True,
                              bias=True,
                              return_all_layers=True)
-        # self.conv3d = nn.Sequential(
-        #     nn.Conv3d(in_channels=3, out_channels=1, kernel_size=1, padding=0, stride=1),
-        #     nn.BatchNorm3d(num_features=1),
-        #     nn.ReLU()
-        # )
-        # self.conv3d = nn.Sequential(
-        #     nn.Conv3d(in_channels=3, out_channels=2, kernel_size=1, padding=0),
-        #     nn.Conv3d(in_channels=2, out_channels=1, kernel_size=1, padding=0),
-        #     nn.BatchNorm3d(num_features=1),
-        #     nn.PReLU()
-        # )
-        self.activate_3d = activate_3d
+
         self.hidden = None
         self.tmp_hidden = None
         self.tmp_old_pred = [None, None]
@@ -140,17 +144,17 @@ class Deeplabv3Plus_lstmV2(nn.Module):
 
         out, self.hidden = self.lstm(out, self.hidden)
         out = out[0]
-        # if self.activate_3d:
-        # out = self.conv3d(out)
-
         out = out[:, -1, :, :, :]  # <--- not to sure if 0 or -1
         self.hidden = [tuple(state.detach() for state in i) for i in self.hidden]
         self.old_pred[0] = self.old_pred[1]  # oldest at 0 position
         self.old_pred[1] = out.unsqueeze(1).detach()  # newest at 1 position
         return out
 
-
 class Deeplabv3Plus_lstmV3(nn.Module):
+    """
+    Base model with lstm that receives no additional timesteps.
+    Lstm is located after concatenation of encoder output and low level features.
+    """
     def __init__(self, backbone="mobilenet"):
         super().__init__()
         if backbone == "mobilenet":
@@ -190,8 +194,11 @@ class Deeplabv3Plus_lstmV3(nn.Module):
         out = F.interpolate(out, size=input_shape, mode='bilinear', align_corners=False)
         return out
 
-
 class Deeplabv3Plus_lstmV4(nn.Module):
+    """
+    Base model with lstm that receives two additional timesteps.
+    Lstm is located after concatenation of encoder output and low level features.
+    """
     def __init__(self, backbone="mobilenet"):
         super().__init__()
         if backbone == "mobilenet":
@@ -231,8 +238,54 @@ class Deeplabv3Plus_lstmV4(nn.Module):
         out = F.interpolate(out, size=input_shape, mode='bilinear', align_corners=False)
         return out
 
+class Deeplabv3Plus_lstmV5(nn.Module):
+    """
+    Base model with lstm that uses 1x1 convolutions to reduce complexity.
+    Lstm is located after concatenation of encoder output and low level features.
+    """
+    def __init__(self, backbone="mobilenet", store_previous=False):
+        super().__init__()
+        if backbone == "mobilenet":
+            self.base = deeplabv3plus_mobilenet(num_classes=2, pretrained_backbone=True)
+            in_channels = 320
+            low_level_channels = 24
+        elif backbone == "resnet50":
+            self.base = deeplabv3plus_resnet50(num_classes=2, pretrained_backbone=True)
+            in_channels = 2048
+            low_level_channels = 256
+        self.base.classifier = DeepLabHeadV3PlusLSTMV2(in_channels, low_level_channels, 2, [12, 24, 36],
+                                                     store_previous=store_previous)
+        self.tmp_old_pred = [None, None]
+        self.tmp_hidden = None
+
+    def detach(self):
+        pass
+
+    def reset(self):
+        self.base.classifier.hidden = None
+        self.base.classifier.old_pred = [None, None]
+
+    def start_eval(self):
+        self.tmp_hidden = self.base.classifier.hidden
+        self.tmp_old_pred = self.base.classifier.old_pred
+        self.reset()
+
+    def end_eval(self):
+        self.base.classifier.hidden = self.tmp_hidden
+        self.base.classifier.old_pred = self.tmp_old_pred
+        self.tmp_hidden = None
+        self.tmp_old_pred = [None, None]
+
+    def forward(self, x, *args):
+        input_shape = x.shape[-2:]
+        out = self.base(x)
+        out = F.interpolate(out, size=input_shape, mode='bilinear', align_corners=False)
+        return out
 
 class Deeplabv3Plus_lstmV7(nn.Module):
+    """
+    test version;
+    """
     def __init__(self, backbone="mobilenet", keep_hidden=True):
         super().__init__()
         if backbone == "mobilenet":
@@ -297,49 +350,12 @@ class Deeplabv3Plus_lstmV7(nn.Module):
         self.old_pred[1] = out.unsqueeze(1).detach()
         return out
 
-
-class Deeplabv3Plus_lstmV5(nn.Module):
-    def __init__(self, backbone="mobilenet", store_previous=False):
-        super().__init__()
-        if backbone == "mobilenet":
-            self.base = deeplabv3plus_mobilenet(num_classes=2, pretrained_backbone=True)
-            in_channels = 320
-            low_level_channels = 24
-        elif backbone == "resnet50":
-            self.base = deeplabv3plus_resnet50(num_classes=2, pretrained_backbone=True)
-            in_channels = 2048
-            low_level_channels = 256
-        self.base.classifier = DeepLabHeadV3PlusLSTMV2(in_channels, low_level_channels, 2, [12, 24, 36],
-                                                     store_previous=store_previous)
-        self.tmp_old_pred = [None, None]
-        self.tmp_hidden = None
-
-    def detach(self):
-        pass
-
-    def reset(self):
-        self.base.classifier.hidden = None
-        self.base.classifier.old_pred = [None, None]
-
-    def start_eval(self):
-        self.tmp_hidden = self.base.classifier.hidden
-        self.tmp_old_pred = self.base.classifier.old_pred
-        self.reset()
-
-    def end_eval(self):
-        self.base.classifier.hidden = self.tmp_hidden
-        self.base.classifier.old_pred = self.tmp_old_pred
-        self.tmp_hidden = None
-        self.tmp_old_pred = [None, None]
-
-    def forward(self, x, *args):
-        input_shape = x.shape[-2:]
-        out = self.base(x)
-        out = F.interpolate(out, size=input_shape, mode='bilinear', align_corners=False)
-        return out
-
 # --- GRU ---
 class Deeplabv3Plus_gruV1(nn.Module):
+    """
+    Base model with gru that receives no additional timesteps.
+    Gru is located at the end of the model.
+    """
     def __init__(self, backbone="mobilenet"):
         super().__init__()
         if backbone == "mobilenet":
@@ -374,8 +390,11 @@ class Deeplabv3Plus_gruV1(nn.Module):
         out = out[0][:, -1, :, :, :]
         return out
 
-
 class Deeplabv3Plus_gruV2(nn.Module):
+    """
+    Base model with gru that receives two additional timesteps.
+    Gru is located at the end of the model.
+    """
     def __init__(self, backbone="mobilenet"):
         super().__init__()
         if backbone == "mobilenet":
@@ -431,8 +450,11 @@ class Deeplabv3Plus_gruV2(nn.Module):
         self.old_pred[1] = out.unsqueeze(1).detach()  # newest at 1 position
         return out
 
-
 class Deeplabv3Plus_gruV3(nn.Module):
+    """
+    Base model with gru that receives no additional timesteps.
+    Gru is located after concatenation of encoder output and low level features.
+    """
     def __init__(self, backbone="mobilenet"):
         super().__init__()
         if backbone == "mobilenet":
@@ -476,8 +498,11 @@ class Deeplabv3Plus_gruV3(nn.Module):
         out = F.interpolate(out, size=input_shape, mode='bilinear', align_corners=False)
         return out
 
-
 class Deeplabv3Plus_gruV4(nn.Module):
+    """
+    Base model with gru that receives two additional timesteps.
+    Gru is located after concatenation of encoder output and low level features.
+    """
     def __init__(self, backbone="mobilenet"):
         super().__init__()
         if backbone == "mobilenet":
@@ -522,6 +547,10 @@ class Deeplabv3Plus_gruV4(nn.Module):
         return out
 
 class Deeplabv3Plus_gruV5(nn.Module):
+    """
+    Base model with gru that uses 1x1 convolutions to reduce complexity.
+    Gru is located after concatenation of encoder output and low level features.
+    """
     def __init__(self, backbone="mobilenet", store_previous=False):
         super().__init__()
         if backbone == "mobilenet":

@@ -45,7 +45,6 @@ class ConvGRUCell(nn.Module):
 
     def forward(self, input_tensor, h_cur):
         """
-
         :param self:
         :param input_tensor: (b, c, h, w)
             input is actually the target_model

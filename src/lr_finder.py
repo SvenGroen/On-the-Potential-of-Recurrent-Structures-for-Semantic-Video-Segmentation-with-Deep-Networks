@@ -8,6 +8,7 @@ from torch.utils.data import DataLoader
 from src.dataset.YT_Greenscreen import YT_Greenscreen
 from src.gridtrainer import GridTrainer
 import matplotlib.pyplot as plt
+import pandas as pd
 
 """
 Starts LR range test for multiple hyperparmaeters and plots them
@@ -27,7 +28,7 @@ with open(args.config) as js:
 
 historys = []
 weight_decays = [0, 1e-4, 1e-6, 1e-8]
-# batch sizes = [2, 4, 6, 8, 10, 12]
+# weight_decays = [2, 4, 6, 8,10]
 
 
 for wd in weight_decays:
@@ -36,8 +37,8 @@ for wd in weight_decays:
     model = trainer.model
     criterion = trainer.criterion
     val_dataset = YT_Greenscreen(train=False, start_index=0,
-                                 batch_size=config["batch_size"])  # batch_size=trainer.config["batch_size"])
-    val_loader = DataLoader(val_dataset, val_dataset.batch_size, shuffle=False)
+                                 batch_size=config["batch_size"])  #
+    val_loader = DataLoader(val_dataset, val_dataset.batch_size, shuffle=False)  # val_dataset.batch_size
     optimizer = optim.Adam(model.parameters(), lr=1e-7, weight_decay=wd)
     lr_finder = LRFinder(model, optimizer, criterion, device=device)
     try:
@@ -62,6 +63,11 @@ for wd, hist in zip(weight_decays, historys):
     ax.set_xscale("log")
 # x_ticks = [i*10 ** - exponent for exponent in range(9, 1, -1) for i in range(1,10,1)]
 # plt.xticks(x_ticks)
+js = {"wds": weight_decays, "hists": historys}
+
+with open(str(config["save_files_path"]) + "/results.json", "w") as out:
+    json.dump(js, out)
+
 plt.xlabel("Learning Rate")
 plt.ylabel("Loss")
 ax.legend(title="Weight Decay")

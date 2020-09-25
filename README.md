@@ -2,10 +2,10 @@
 
 This Github Repositiory can be used to train different versions of the DeepLabV3+ (with additional Recurrent Units).
 
-This Code is designed to work on the Grid Computing Network from the Institute of Cognitive Science (IKW) Osnabrueck.
-Training on local machines is also possible but some alternations to the Code would be necessary.
+This code is designed to work on the Grid Computing Network from the Institute of Cognitive Science (IKW) Osnabrueck.
+Training on local machines is also possible but some alternations to the code would be necessary.
 
-If you are a member of the university of osnabrueck and have acces to the grid network follow the 
+If you are a member of the university of osnabrueck and have access to the grid network follow the 
 [installation guidelines](#installation-guidelines) to train on the grid network. 
 
 If you want to try the code locally see [Repository setup](#repository-setup) for some help.
@@ -21,27 +21,27 @@ or the study group on StudIP.
 (see [setup scratch folder](#setting-up-your-scratch-folder))
 3. clone the github repository:  
 `git clone https://github.com/SvenGroen/Video_Segmentation.git`
-4. If you dont have already, install anaconda using the *make_torch_env.sh* script.
+4. If you don't have already, install anaconda using the *make_torch_env.sh* script.
 The script will also create a conda environment where packages can be installed. 
 Open *make_torch_env.sh* and rename the environment to your desired name. Current default is "torch".
-Please note: You will have to change your environment name in all .sge files you will run.
+Please note: You will have to change your environment name in all .sge files in src/ you will run.
 Run:
 `qsub make_torch_env.sh` to start the script
 5. The script should automatically install all necessary requirements (listed in requirements.txt).
-Please check the output and error file that are created (env_test.oJOB_ID and env_test.eJOB_ID) and check if any errors are thrown or if the installation was succesfull.
+Please check the output and error file that are created (env_test.oJOB_ID and env_test.eJOB_ID) and check if any errors are thrown or if the installation was successful.
 6. In case some packages have not be installed correctly or errors are thrown, you can use "update_env_packages.sge" to update or reinstall any packages (make sure you change your environment name in this file again).  
 The log files (log_updt.o and log_updt.e) will also list all enviroments that are currently created and will list all pip packages installed. 
 
-#### setting up your scratch folder
-the IKW allows students to create a scratch folder where large datasets and models can be stored. 
+#### Setting up your scratch folder
+The IKW allows students to create a scratch folder where large datasets and models can be stored. 
 These folders are deleted after a certain time period.
 
 To create your own folder do:
 1. cd /net/projects/scratch/
 2. cd summer or cd winter
-3. cd valid_until_**\_January_\**** to one of the folder that is longest valid.
-4. cd 00-APPLY-FOR-STORAGE mkdir test  
-create a folder in the 00-APPLY-FOR-STORAGE folder, which will call a script and after some time you will have a folder
+3. cd valid_until_**\_January_\**** to one of the folders that is longest valid.
+4. cd 00-APPLY-FOR-STORAGE  
+5. create a file (e.g. `vim test.txt`) in the 00-APPLY-FOR-STORAGE folder, which will elicit a script and after some time you will have a folder
 with your rz-login to store data.
 
 ## Dataset 
@@ -51,15 +51,15 @@ place the "YT_originals" folder into: *src/dataset/videos/* (see folder structur
 
 ### Preprocessing
 The preprocessing is devided into 2 steps:
-1. Clip the videos into 4 second snippets, run:  
-`src/4sec_preprocess.py`
+
+1. Clip the videos into 4 second snippets, open:  
+`preprocess.sge` and make sure that `setup_file=src/4sec_preprocess.py`   
+then run `qsub preprocess.sge`   
 
 2. Transform the videos into images and randomize the order, run:
-`src/Vid2Img_preprocess.py`
+`src/Vid2Img_preprocess.py` by setting `setup_file=src/Vid2Img_preprocess.py` in `preprocess.sge`   
+then run `qsub preprocess.sge`   
 
-To run the script on the Grid network use:
-`qsub preprocess.sge`   
-but make sure you change the "setup_file" variable after the first preprocessing step.
 
 The overall video material is very long, so preprocessing might take a while, depending on your hardeware resources.
 
@@ -101,10 +101,10 @@ src/
 |     |     |     |         |---test/input # contains all raw testing mp4 files but cut into 4 seconds snippets
 ```
 
-##Starting the training
-###On the Grid Network
+## Starting the training
+### On the Grid Network
 The easiest way to start a training job is to use the *src/train_multiple.py* script.
-Here you specify a train_config.json file that will be used to store the key informations for the training loop.
+Here you specify a train_config.json file that will be used to store the key information for the training loop.
 Most important parameters to set are:
 
 - batch_size: int = training batch size
@@ -170,8 +170,8 @@ src/
 ```
 
 #### Parameter adjustment of the sge files
-The sge files contain several parameters that need to be adjusted and changed, depending on your needs and access right on the IKW Grid:
-Most of the parameters probably don't need to be changed, however, for some it may be usefull:
+The sge files contain several parameters that need to be adjusted and changed, depending on your needs and access rights on the IKW Grid:
+Most of the parameters probably don't need to be changed, however, for some it may be useful:
 ```
 to select a certain host use:
 #$ -l hostname=*cippy18* 
@@ -190,7 +190,7 @@ There make sure you initialize the Time_logger object in the gridtrainer class w
 e.g.: restart_time=60 * 60 * 1.25 end and restart the job before it is automatically killed.
 
 
-####Example Config:
+#### Example Config:
 ```
 models = ["Deep+_mobile"] 
 batch_sizes = 8
@@ -200,18 +200,18 @@ eval_steps = 5
 (...)
 config["save_folder_path"] = "src/models/trained_models/YOUR_FOLDER"
 ```
-will call 3 Jobs that will train 3x a Deep+_mobile for 50 epochs with batch_size 8 and evaluate every 5 epochs.
+will call 3 jobs that will train 3x a Deep+_mobile for 50 epochs with batch_size 8 and evaluate every 5 epochs.
 The main difference between the 3 is, that each one uses a different loss function.
 In a similiar way additional hyperparameters can be tested, but they need to be added manually and the *gridtrainer.py* file needs to be altered.
 
-###Locally
+### Locally
 Starting the training is different if you just want to train locally.
 Most of features do not work (e.g. restarting the script, starting intermediate evaluation).
 Most important is, that you have to set your 
 working directory to the "Video_Segmentation" folder and not "Video_Segmentation/src".
 
 Nevertheless, here is a small explanation on how to train locally:
-####Option 1:
+#### Option 1:
 1:
 
 execute *multiple_train.py* but comment out /delete the ``call(recall_parameter)`` line.
@@ -229,7 +229,7 @@ run train.py:
 
 `pyton src/train.py -cfg path_to_train_config.json`
 
-####Option 2:
+#### Option 2:
 1:
 
 Open gridtrainer.py and change the
@@ -246,9 +246,9 @@ It holds all the necessary objects for training and allows to train, evaluate an
 
 Make sure you read the documentation of the GridTrainer carefully.
 
-##Learning rate range test
+## Learning rate range test
 A learning rate finder implementation (see [References](#references-and-changes)) was used to determine hyperparameters.
-To start algorithm, make sure you edit *lr_starter.py*.  
+To start the algorithm, make sure you edit *lr_starter.py*.  
 *lr_starter.py* creates a config file in the same way like *multiple_train.py* and calls the *lr_finder.py* algorithm.
 *lr_finder.py* will create a plot for each model in the specified path in *lr_starter.py*.
 
@@ -275,7 +275,7 @@ src/
 |     |         |           |               |
 |     |         |           |               |---lr_analysis.png # plot of learning rate range test for different hyperparameters
 ```
-##Evaluation
+## Evaluation
 If you want to start an evaluation independently from the train loop, you can you *eval_multiple.py*
 
 Just specify the path of the folder where all the model folders are stored 
@@ -286,7 +286,7 @@ Just specify the path of the folder where all the model folders are stored
 The results will be saved at: `src/models/trained_models/YOUR_FOLDER/unique_model_name/final_results/`
 
 
-##General Remark
+## General Remark
 This program was mainly written to enable to run a lot of models in parallel and test different settings.
 If you just want to train one of the model versions it is probably easier if you 
 just take the `src/models/network` and `src/models/recurrent_modules` folders and use `src/models/custom_deeplabs.py` 

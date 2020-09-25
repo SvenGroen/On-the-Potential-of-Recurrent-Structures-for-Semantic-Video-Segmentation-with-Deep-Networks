@@ -15,19 +15,18 @@ models needs to be a list containing at least one of these models:
 """
 sys.stderr.write("start writing configs\n")
 
-
 models = ["Deep_mobile_lstmV4", "Deep_resnet50_lstmV4", "Deep_mobile_gruV4", "Deep_resnet50_gruV4",
           "Deep_mobile_lstmV3", "Deep_mobile_gruV3", "Deep_resnet50_lstmV3", "Deep_resnet50_gruV3",
           "Deep_mobile_lstmV2", "Deep_mobile_gruV2", "Deep_resnet50_lstmV2", "Deep_resnet50_gruV2",
           "Deep_mobile_lstmV1", "Deep_mobile_gruV1", "Deep_resnet50_lstmV1", "Deep_resnet50_gruV1",
-          "Deep+_resnet50", "Deep+_mobile", "Deep_mobile_lstmV5", "Deep_mobile_lstmV6", "Deep_mobile_lstmV7"]
-
-models = ["Deep_resnet50_lstmV4"]
+          "Deep+_resnet50", "Deep+_mobile",
+          "Deep_mobile_lstmV5", "Deep_mobile_lstmV6", "Deep_resnet50_lstmV5", "Deep_resnet50_lstmV6",
+          "Deep_mobile_gruV5", "Deep_mobile_gruV6", "Deep_resnet50_gruV5", "Deep_resnet50_gruV6"]
 
 batch_sizes = 8
-num_epochs = 100
-loss = ["SoftDice"]  # "CrossEntropy"
-eval_steps = 5
+num_epochs = 50
+loss = ["SoftDice"]  # "CrossEntropy" or "CrossDice"
+eval_steps = 2
 
 config_paths = []
 models_name = []
@@ -37,13 +36,13 @@ configs = []
 for model in models:
 
     for i in range(len(loss)):
-        config = {}
-        config["model"] = model
-        config["batch_size"] = batch_sizes
-        config["num_epochs"] = num_epochs
-        config["evaluation_steps"] = eval_steps
-        config["loss"] = loss[i]
-        config["save_folder_path"] = "src/models/trained_models/yt_fullV5/"
+        config = {
+            "model": model,
+            "batch_size": batch_sizes,
+            "num_epochs": num_epochs,
+            "evaluation_steps": eval_steps,
+            "loss": loss[i],
+            "save_folder_path": "src/models/trained_models/yt_fullV5/"}
         configs.append(config)
 
 # start to call a job for each config file
@@ -65,8 +64,12 @@ for i, config in enumerate(configs):
     with open(str(config["save_files_path"] + "/train_config.json"), "w") as js:  # save learn config
         json.dump(config, js)
 
-    vRam = "3.8G"
-    if "V6" in config["model"] or "V7" in config["model"] or "V3" in config["model"]:
+    vRam = "3.4G"
+    option = " -l hostname=!\"(*cippy25*|*cippy19*)\""
+    if "V5" in config["model"]:
+        vRam = "3.8G"
+        option = " -l hostname=!\"(*cippy25*|*cippy19*|*vr*|*grid*)\""
+    if "V3" in config["model"] or "V6" in config["model"]:
         vRam = "7.8G"
     if "V4" in config["model"]:
         vRam = "10G"
@@ -74,6 +77,7 @@ for i, config in enumerate(configs):
     job_name = "id" + str(config["track_ID"]).zfill(2) + config["model"]
     recallParameter = 'qsub -N ' + job_name \
                       + ' -l nv_mem_free=' + vRam \
+                      + option \
                       + " -o " + config["save_files_path"] + "/log_files/" + job_name + ".o$JOB_ID" \
                       + " -e " + config["save_files_path"] + "/log_files/" + job_name + ".e$JOB_ID" \
                       + ' -v CFG=' + str(config["save_files_path"]) + "/train_config.json" + ' src/train.sge'

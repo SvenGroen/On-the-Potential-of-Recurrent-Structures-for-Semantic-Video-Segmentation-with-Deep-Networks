@@ -28,8 +28,22 @@ class DeepLabV3(_SimpleSegmentationModel):
 
 
 class DeepLabHeadV3PlusGRU(nn.Module):
-    def __init__(self, in_channels, low_level_channels, num_classes, aspp_dilate=[12, 24, 36], backbone="mobilenet",
+    """
+    Custom DeepLabV3Plus Head with an additional GRU unit.
+    used for versions 3 and 4. Gru positioned after the encoder output and low level feature concatenation
+
+    :param in_channels: number of input channels for the ASPP (vary across different backbones)
+    :param low_level_channels: number of low level channels  (vary across different backbones)
+    :param num_classes: number of output classes
+    :param aspp_dilate: aspp dilatation rates
+    :param store_previous: if True, t-2 and t-1 are used to help predict t, else only t is used
+    """
+
+    def __init__(self, in_channels, low_level_channels, num_classes, aspp_dilate=[12, 24, 36],
                  store_previous=False):
+        """
+        see help(DeepLabHeadV3PlusGRU) for detailed information
+        """
         super(DeepLabHeadV3PlusGRU, self).__init__()
         self.project = nn.Sequential(
             nn.Conv2d(low_level_channels, 48, 1, bias=False),
@@ -38,7 +52,6 @@ class DeepLabHeadV3PlusGRU(nn.Module):
         )
 
         self.aspp = ASPP(in_channels, aspp_dilate)
-
         self.classifier = nn.Sequential(
             nn.Conv2d(304, 256, 3, padding=1, bias=False),
             nn.BatchNorm2d(256),
@@ -54,6 +67,11 @@ class DeepLabHeadV3PlusGRU(nn.Module):
         self.old_pred = [None, None]
 
     def forward(self, feature):
+        """
+        called after the backbone features are extracted.
+        :param feature: backbone low and high level features
+        :return: model output
+        """
         low_level_feature = self.project(feature['low_level'])
         output_feature = self.aspp(feature['out'])
         output_feature = F.interpolate(output_feature, size=low_level_feature.shape[2:], mode='bilinear',
@@ -61,12 +79,12 @@ class DeepLabHeadV3PlusGRU(nn.Module):
         concat = torch.cat([low_level_feature, output_feature], dim=1)
         out = concat.unsqueeze(1)
 
+        # store previous predictions to be used by gru
         if self.store_previous:
             if None in self.old_pred:
                 for i in range(len(self.old_pred)):
                     self.old_pred[i] = torch.zeros_like(out)
             out = torch.cat(self.old_pred + [out], dim=1)
-
         out, self.hidden = self.gru(out, self.hidden[-1])
         self.hidden = [tuple(state.detach() for state in i) for i in self.hidden]
         out = out[0][:, -1, :, :, :].unsqueeze(1)
@@ -77,6 +95,9 @@ class DeepLabHeadV3PlusGRU(nn.Module):
         return self.classifier(out[:, -1, :, :, :])
 
     def _init_weight(self):
+        """
+        initialise weights
+        """
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_normal_(m.weight)
@@ -86,6 +107,18 @@ class DeepLabHeadV3PlusGRU(nn.Module):
 
 
 class DeepLabHeadV3PlusGRUV2(nn.Module):
+    """
+    Custom DeepLabV3Plus Head with an additional GRU unit0.
+    used for versions 5 and 6. Gru positioned after the encoder output and low level feature concatenation.
+    Reduced the number of channels through 1x1 convolutions before the GRU.
+
+    :param in_channels: number of input channels for the ASPP (vary across different backbones)
+    :param low_level_channels: number of low level channels  (vary across different backbones)
+    :param num_classes: number of output classes
+    :param aspp_dilate: aspp dilatation rates
+    :param store_previous: if True, t-2 and t-1 are used to help predict t, else only t is used
+    """
+
     def __init__(self, in_channels, low_level_channels, num_classes, aspp_dilate=[12, 24, 36], backbone="mobilenet",
                  store_previous=False):
         super(DeepLabHeadV3PlusGRUV2, self).__init__()
@@ -122,6 +155,12 @@ class DeepLabHeadV3PlusGRUV2(nn.Module):
         self.old_pred = [None, None]
 
     def forward(self, feature):
+        """
+        called after the backbone features are extracted.
+
+        :param feature: backbone low and high level features
+        :return: model output
+        """
         low_level_feature = self.project(feature['low_level'])
         output_feature = self.aspp(feature['out'])
         output_feature = F.interpolate(output_feature, size=low_level_feature.shape[2:], mode='bilinear',
@@ -148,6 +187,9 @@ class DeepLabHeadV3PlusGRUV2(nn.Module):
         return self.classifier(out)
 
     def _init_weight(self):
+        """
+        initialise weights
+        """
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_normal_(m.weight)
@@ -157,6 +199,17 @@ class DeepLabHeadV3PlusGRUV2(nn.Module):
 
 
 class DeepLabHeadV3PlusLSTM(nn.Module):
+    """
+    Custom DeepLabV3Plus Head with an additional LSTM unit.
+    used for versions 3 and 4. LSTM positioned after the encoder output and low level feature concatenation
+
+    :param in_channels: number of input channels for the ASPP (vary across different backbones)
+    :param low_level_channels: number of low level channels  (vary across different backbones)
+    :param num_classes: number of output classes
+    :param aspp_dilate: aspp dilatation rates
+    :param store_previous: if True, t-2 and t-1 are used to help predict t, else only t is used
+    """
+
     def __init__(self, in_channels, low_level_channels, num_classes, aspp_dilate=[12, 24, 36], store_previous=False):
         super(DeepLabHeadV3PlusLSTM, self).__init__()
         self.project = nn.Sequential(
@@ -182,6 +235,12 @@ class DeepLabHeadV3PlusLSTM(nn.Module):
         self.old_pred = [None, None]
 
     def forward(self, feature):
+        """
+        called after the backbone features are extracted.
+
+        :param feature: backbone low and high level features
+        :return: model output
+        """
         low_level_feature = self.project(feature['low_level'])
         output_feature = self.aspp(feature['out'])
         output_feature = F.interpolate(output_feature, size=low_level_feature.shape[2:], mode='bilinear',
@@ -204,6 +263,9 @@ class DeepLabHeadV3PlusLSTM(nn.Module):
         return self.classifier(out[:, -1, :, :, :])
 
     def _init_weight(self):
+        """
+        initialise weights
+        """
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_normal_(m.weight)
@@ -213,6 +275,18 @@ class DeepLabHeadV3PlusLSTM(nn.Module):
 
 
 class DeepLabHeadV3PlusLSTMV2(nn.Module):
+    """
+    Custom DeepLabV3Plus Head with an additional LSTM unit.
+    used for versions 5 and 6. Gru positioned after the encoder output and low level feature concatenation.
+    Reduced the number of channels through 1x1 convolutions before the LSTM.
+
+    :param in_channels: number of input channels for the ASPP (vary across different backbones)
+    :param low_level_channels: number of low level channels  (vary across different backbones)
+    :param num_classes: number of output classes
+    :param aspp_dilate: aspp dilatation rates
+    :param store_previous: if True, t-2 and t-1 are used to help predict t, else only t is used
+    """
+
     def __init__(self, in_channels, low_level_channels, num_classes, aspp_dilate=[12, 24, 36], store_previous=False):
         super(DeepLabHeadV3PlusLSTMV2, self).__init__()
         self.project = nn.Sequential(
@@ -249,6 +323,12 @@ class DeepLabHeadV3PlusLSTMV2(nn.Module):
         self.old_pred = [None, None]
 
     def forward(self, feature):
+        """
+        called after the backbone features are extracted.
+
+        :param feature: backbone low and high level features
+        :return: model output
+        """
         low_level_feature = self.project(feature['low_level'])
         output_feature = self.aspp(feature['out'])
         output_feature = F.interpolate(output_feature, size=low_level_feature.shape[2:], mode='bilinear',
@@ -275,6 +355,7 @@ class DeepLabHeadV3PlusLSTMV2(nn.Module):
         return self.classifier(out)
 
     def _init_weight(self):
+        """initialise weights"""
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_normal_(m.weight)

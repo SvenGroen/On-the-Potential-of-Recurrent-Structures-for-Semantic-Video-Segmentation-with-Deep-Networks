@@ -1,4 +1,6 @@
 torch
 torchvision
 numpy
+torchsummary
+tqdm
 Pillow

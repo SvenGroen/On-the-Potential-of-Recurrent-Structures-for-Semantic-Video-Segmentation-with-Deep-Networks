@@ -11,7 +11,14 @@ import torch
 """
 Extracts the evaluation results from all metrics.pth.tar files in a directory of trained models and displays
 """
-
+def strip_base(x):
+    """
+    removes "base" from label string
+    """
+    if x == "base":
+        return x
+    else:
+        return x.lstrip("base ")
 
 def get_change(current, previous):
     """
@@ -39,7 +46,7 @@ def autolabel(rects, ax, percentage=True, base=None):
         if base is not None:
             change = get_change(height, base)
             if change == 0:
-                text = '{}%'.format(height*100)
+                text = '{}%'.format(height * 100)
             else:
                 text = '{:+}'.format(round(change, 2)) + "%"
 
@@ -47,26 +54,25 @@ def autolabel(rects, ax, percentage=True, base=None):
                     xy=(rect.get_x() + rect.get_width() / 2, height),
                     xytext=(0, 3),  # 3 points vertical offset
                     textcoords="offset points",
-                    size=30,
+                    size=35,
                     ha='center', va='bottom')
 
 
 # path where the models are saved
 model_path = Path("src/models/trained_models/yt_fullV4_probably_use")
-out_name = "Metric_Results_17_09"
+out_name= "Metric_Results"
 (model_path / out_name).mkdir(parents=True, exist_ok=True)
 
 results = []
 for folder in model_path.glob("*"):
-    #or "lstmV6" in str(folder) or "V5" in str(folder)
-    if "Metric" in str(folder) or "lstmV6" in str(folder) or "V5" in str(folder) or "V7" in str(folder):
+    # Exclude certain models like this: if "lstmV6" in str(folder) or "V5" in str(folder)
+    if "Metric" in str(folder) or "V6" in str(folder) or "V5" in str(folder) or "V7" in str(folder):
         continue
     if not os.path.isdir(folder):
         continue
 
-
-    print(folder)
-    metric_results = torch.load(folder / "final_results_prob_use/metrics.pth.tar", map_location="cpu", )
+    print("Processing: ", folder)
+    metric_results = torch.load(folder / "final_results_prob_use/metrics.pth.tar", map_location="cpu")#"final_results_best_val/metrics.pth.tar"
     with open(folder / "train_config.json") as js:
         config = json.load(js)
 
@@ -100,17 +106,18 @@ for mode in ["train", "val"]:
                 else:
                     data[category].append(model[mode][-1][category].avg)
     df = pd.DataFrame.from_dict(data)
-
     df["Mode"] = mode
     dfs.append(df)
+    df = df.sort_values(by="Label")
+    df["Label"] = df["Label"].map(lambda x: strip_base(x))
+
+
 
     mobile_df = df[df["model_class"] == "mobile"].sort_values(by=["Label"])
     resnet_df = df[df["model_class"] != "mobile"].sort_values(by=["Label"])
 
-    categorys = ["Mean IoU", "Pixel Accuracy", "Per Class Accuracy", "Dice", "num_params",
-                 "Time_taken"]  # , "time_in_ms"
     metrics = ["Mean IoU", "Pixel Accuracy", "Per Class Accuracy", "Dice", "FIP",
-               "FP"]  # <--------------------------------------------------------------------------------------------------------USE LATER WHEN NEW METRICS FILE
+               "FP"]
     plots = []
     fontdict = {'fontsize': 30,
                 'fontweight': 1,
@@ -130,10 +137,11 @@ for mode in ["train", "val"]:
             f.savefig(model_path / out_name / name / str(name + "_" + mode + ".png"))
         plt.close(fig=f)
     bars = []
-
     # create individual bar plots with more details
     for name, df in [("mobile", mobile_df), ("resnet", resnet_df)]:
-        df = df.round(4)
+        df = df.round(4).reset_index().sort_values(by="Label")
+        df= pd.concat([df.iloc[[8], :], df.drop(8, axis=0)], axis=0)
+        print(df["Label"])
         for category in metrics:
             base_performance = float(df[category][df["Label"] == "base"])
             f_new, ax_new = plt.subplots(figsize=(50, 20))
@@ -142,8 +150,8 @@ for mode in ["train", "val"]:
             ax_new.set_ylim([0, 1])
             ax_new.set_title(category, fontdict=fontdict)
             autolabel(bar, ax=ax_new, base=base_performance)  # , base=base_performance
-            plt.xticks(fontsize=25)
-            plt.yticks(fontsize=25)
+            plt.xticks(fontsize=30)
+            plt.yticks(fontsize=30)
             f_new.savefig(model_path / out_name / name / str(category + "_" + mode + ".png"))
 
             plt.close(fig=f_new)

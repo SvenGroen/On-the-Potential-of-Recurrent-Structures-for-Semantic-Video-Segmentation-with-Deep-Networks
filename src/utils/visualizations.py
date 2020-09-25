@@ -4,8 +4,17 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sys
 
-
+"""
+Some usefull visualization scripts
+"""
 def visualize_metric(metric_log, step_size=2, epoch=0, save_file_path=None):
+    """
+    plots the metrics vs epoch for metrices saved in metric log
+    :param metric_log: dict containing the metric logger information
+    :param step_size: not used anymore
+    :param epoch: not used anymore
+    :param save_file_path: Where should the images be saved
+    """
     for key in metric_log["train"][0]:
         if not key in ["curr_epoch", "hist"]:
             y = defaultdict(list)
@@ -28,6 +37,12 @@ def visualize_metric(metric_log, step_size=2, epoch=0, save_file_path=None):
 
 
 def visualize_logger(logger, path):
+    """
+    more simple version for visualization.
+    Plots Lrs vs epoch, loss vs epoch, miou vs epoch
+    :param logger: logger dict containing the lrs, loss and mious values
+    :param path: where to save the results
+    """
     def save_figure(values, y_label="", x_label="Epoch"):
         # saves values in a plot
         plt.plot(values)

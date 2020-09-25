@@ -125,7 +125,7 @@ class GridTrainer:
                                                      base_lr=self.lr_boundarys[0], max_lr=self.lr_boundarys[1],
                                                      cycle_momentum=False,
                                                      mode="triangular2",
-                                                     step_size_up=7 * int(len(self.loader)))  # 6 * len(self.loader)
+                                                     step_size_up=2 * int(len(self.loader)))  # 6 * len(self.loader)
         # self.scheduler = optim.lr_scheduler.OneCycleLR(self.optimizer, max_lr=self.lr_boundarys[1],
         #                                              steps_per_epoch=len(self.loader), epochs=self.config["num_epochs"])
         self._RESTART = False
@@ -195,7 +195,7 @@ class GridTrainer:
         self.logger["seed"] = self.dataset.seed
         torch.save(self.logger, self.config["save_files_path"] + "/checkpoint.pth.tar")
         # save checkpoint every 10 epochs
-        if self.logger["epochs"][-1] % 10 == 0:
+        if self.logger["epochs"][-1] % 10 == 0 and self.logger["epochs"][-1] > 0:
             torch.save(self.logger,
                        self.config["save_files_path"] + "/checkpoint_{}.pth.tar".format(self.logger["epochs"][-1]))
 
@@ -219,13 +219,19 @@ class GridTrainer:
                          "\n".format(self.config["track_ID"], self.logger["epochs"][-1], self.logger["batch_index"]))
 
         job_name = "id" + str(self.config["track_ID"]).zfill(2) + "e" + str(self.logger["epochs"][-1])
-        VRAM = "3.8G"
-        if "V6" in self.config["model"] or "V7" in self.config["model"] or "V3" in self.config["model"]:
+        VRAM = "3.4G"
+        option = " -l hostname=!\"(*cippy25*|*cippy19*)\""
+        if "V5" in self.config["model"]:
+            VRAM = "3.8G"
+            option = " -l hostname=!\"(*cippy25*|*cippy19*|*vr*|*grid*)\""
+        if "V3" in self.config["model"] or "V6" in self.config["model"]:
             VRAM = "7.8G"
         if "V4" in self.config["model"]:
             VRAM = "10G"
         recall_parameter = 'qsub -N ' + "id" + str(self.config["track_ID"]) + "e" + str(self.logger["epochs"][-1]) + \
-                           str(self.config["model"]) + ' -l nv_mem_free=' + VRAM + " -o " \
+                           str(self.config["model"]) + ' -l nv_mem_free=' + VRAM \
+                           + option \
+                           + " -o " \
                            + str(self.config["save_files_path"]) + "/log_files/" + job_name + ".o$JOB_ID" + " -e " \
                            + str(self.config["save_files_path"]) + "/log_files/" + job_name + ".e$JOB_ID" + ' -v CFG=' \
                            + str(self.config["save_files_path"]) + "/train_config.json" + ' src/train.sge'
@@ -294,8 +300,8 @@ class GridTrainer:
         """
         for epoch in tqdm(range(self.get_starting_parameters(what="epoch"), self.config["num_epochs"])):
             sys.stderr.write(f"\nStarting new epoch: {epoch}")
-            #memory = 0
-            #max_mem = 0
+            # memory = 0
+            # max_mem = 0
             if not self._RESTART:
                 self.logger["epochs"].append(epoch)
                 self.logger["lrs"].append(self.optimizer.state_dict()["param_groups"][0]["lr"])
@@ -496,15 +502,21 @@ class GridTrainer:
                 # conversions since hstack expects PIL image or np array and cv2 np array with channel at last position
                 if self.logger["epochs"][-1] % video_freq == 0 or self.logger["epochs"][-1] == self.config[
                     "num_epochs"] - 1 or final:
-                    for j in range(self.batch_size):  # if batchsize > 1 assert that the video writing works
-                        out = outputs[j, :, :].unsqueeze(0)
-                        lbl = labels[j, :, :].unsqueeze(0)
-                        img = images[j, :, :, :].unsqueeze(0)
-                        tmp_prd = to_PIL(out[0].cpu().float())
-                        tmp_inp = to_PIL(img.squeeze(0).cpu())
-                        tmp_inp = Image.fromarray(cv2.cvtColor(np.asarray(tmp_inp), cv2.COLOR_RGB2BGR))
-                        tmp_lbl = to_PIL(lbl.cpu().float())
-                        out_vid.write(np.array(stack.hstack([tmp_inp, tmp_lbl, tmp_prd])))
+                    if i < 29 * 4 * 10:  # 10 4 second clips
+                        for j in range(self.batch_size):  # if batchsize > 1 assert that the video writing works
+                            out = outputs[j, :, :].unsqueeze(0)
+                            lbl = labels[j, :, :].unsqueeze(0)
+                            img = images[j, :, :, :].unsqueeze(0)
+                            tmp_prd = to_PIL(out[0].cpu().float())
+                            tmp_inp = to_PIL(img.squeeze(0).cpu())
+                            tmp_inp = Image.fromarray(cv2.cvtColor(np.asarray(tmp_inp), cv2.COLOR_RGB2BGR))
+                            tmp_lbl = to_PIL(lbl.cpu().float())
+                            frame = np.array(stack.hstack([tmp_inp, tmp_lbl, tmp_prd]))
+                            out_vid.write(frame)
+                            if i in [58, 174, 290, 406]:  # save certain example images
+                                mode = "train" if not self.test else "val"
+                                cv2.imwrite(str(out_folder) + "/{}_{}_{}.png".format(self.config["model"], mode, i),
+                                            frame)
                         # break after certain amount of frames (remove for final (last) evaluation)
                 if i == eval_length:
                     break
@@ -512,7 +524,6 @@ class GridTrainer:
             metrics["eval_loss"].update(running_loss / len(self.dataset))
             metrics["curr_epoch"] = self.logger["epochs"][-1]
             metrics["num_params"].update(sum([param.nelement() for param in self.model.parameters()]))
-
 
             if self.logger["epochs"][-1] % video_freq == 0 or self.logger["epochs"][-1] == self.config[
                 "num_epochs"] - 1 or final:
@@ -528,7 +539,6 @@ class GridTrainer:
         """
         This method is used to meassure the average time a model takes to evaluate a single image. In addition to that
         several image are selected and saves as png files.
-        :param self:
         :param checkpoint: the checkpoint that should be loaded
         :param batch_size: what batch size should be used
         :return: average time_taken
@@ -536,13 +546,13 @@ class GridTrainer:
         """
         from statistics import mean
         import time
+
         self.set_seeds(seed=0)
         print("dataset seed: ", self.dataset.seed)
         self.load_after_restart(name=checkpoint)
         self.dataset.set_start_index(0)
         durations = []
         with torch.no_grad():
-            sys.stderr.write("\nEvaluating\n")
             self.model.eval()
             self.model.start_eval()
             to_PIL = T.ToPILImage()
@@ -550,10 +560,9 @@ class GridTrainer:
             out_folder = Path(self.config["save_files_path"]) / "example_results"
             out_folder.mkdir(parents=True, exist_ok=True)
             mode = "train" if not self.test else "val"
+            tmp = 600 if self.test else 58 # which images should be saved
             for i, batch in enumerate(loader):
-                if self.test:
-                    if i not in [58, 174, 290, 406]:
-                        continue
+                sys.stderr.write(f"loading {i}")
                 print("i", i)
                 start = time.time()
                 idx, video_start, (images, labels) = batch
@@ -564,9 +573,9 @@ class GridTrainer:
                 pred = self.model(images)
                 outputs = torch.argmax(pred, dim=1).float()
                 end = time.time() - start
-                if i > 3:
+                if i > 10:
                     durations.append(end * 1000)
-                if i in [58, 174, 290, 406]:  #
+                if i in [tmp]:  #174, 290, 406,
                     labels = labels.type(torch.uint8)
                     outputs = outputs.type(torch.uint8)
                     for j in range(batch_size):  # if batchsize > 1 assert that the video writing works
@@ -575,12 +584,15 @@ class GridTrainer:
                         img = images[j, :, :, :].unsqueeze(0)
                         tmp_prd = to_PIL(out[0].cpu().float())
                         tmp_inp = to_PIL(img.squeeze(0).cpu())
+                        tmp_inp.save(str(out_folder) + "/{}_{}_{}_inp.png".format(self.config["model"], mode, i))
                         tmp_inp = Image.fromarray(cv2.cvtColor(np.asarray(tmp_inp), cv2.COLOR_RGB2BGR))
                         tmp_lbl = to_PIL(lbl.cpu().float())
+                        tmp_prd.save(str(out_folder) + "/{}_{}_{}_prd.png".format(self.config["model"], mode, i))
                         image = (np.array(stack.hstack([tmp_inp, tmp_lbl, tmp_prd])))
                         print("saving: ", str(out_folder))
-                        cv2.imwrite(str(out_folder) + "/{}_{}_{}.png".format(self.config["model"], mode, i), image)
-                if i == 500:
+
+                        cv2.imwrite(str(out_folder) + "/{}_{}_{}_comb.png".format(self.config["model"], mode, i), image)
+                if i > tmp:
                     break
         return mean(durations)
 
