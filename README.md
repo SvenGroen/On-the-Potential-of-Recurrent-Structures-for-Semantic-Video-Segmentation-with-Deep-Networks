@@ -12,29 +12,30 @@ If you want to try the code locally see [Repository setup](#repository-setup) fo
 
 ##### Table of Contents  
 [Installation Guidelines](#installation-Guidelines)  
-[Grid Network Setup](#Grid-Network-Setups)
-[Setting up your scratch folder](#Setting-up-your-scratch-folder)
-[Dataset](#Dataset)
-[Preprocessing](#Preprocessing)
-[Starting the training](#Starting-the-training)
-[On the Grid Network](#On-the-Grid-Network)
-[Parameter adjustment of the sge files](#Parameter-adjustment-of-the-sge-files)
-[Example Config](#Example-Config)
-[Locally](#Locally)
-[Option 1](#Option-1)
-[Option 2](#Option-2)
-[Learning rate range test](#Learning-rate-range-test)
-[Evaluation](#Evaluation)
-[General Remark](#General-Remark)
-[References and changes](#References-and-changes)
-[Pip list](#Pip-list)
+[Grid Network Setup](#Grid-Network-Setups)   
+[Setting up your scratch folder](#Setting-up-your-scratch-folder)   
+[Dataset](#Dataset)   
+[Preprocessing](#Preprocessing)   
+[Starting the training](#Starting-the-training)   
+[On the Grid Network](#On-the-Grid-Network)   
+[Parameter adjustment of the sge files](#Parameter-adjustment-of-the-sge-files)   
+[Example Config](#Example-Config)   
+[Locally](#Locally)   
+[Option 1](#Option-1)   
+[Option 2](#Option-2)   
+[Learning rate range test](#Learning-rate-range-test)   
+[Evaluation](#Evaluation)   
+[General Remark](#General-Remark)   
+[References and changes](#References-and-changes)   
+[Pip list](#Pip-list)   
 
 # Results
-![DeepLabV3+ Architecture with Reccurrent Units](installation-graphics/DLV3Plus_RU.png)
-![MobileNetV2-Backbone results](installation-graphics/mobile_results.png)
-![MobileNetV2-Backbone results](installation-graphics/MobilenetV2_results.png.png)
-![ResNet50-Backbone](installation-graphics/resnet_results.png)
-![ResNet50-Backbone results](installation-graphics/ResNet50_results.png)
+<img src="installation-graphics/DLV3Plus_RU.png" width="100" height="100">
+<img src="installation-graphics/mobile_results.png" width="100" height="100">
+<img src="installation-graphics/MobilenetV2_results.png" width="100" height="100">
+<img src="installation-graphics/resnet_results.png" width="100" height="100">
+<img src="installation-graphics/ResNet50_results.png" width="100" height="100">
+
 
 ## Installation Guidelines
 If you have trouble during the installation progress feel free to contact me.
