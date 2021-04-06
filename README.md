@@ -38,15 +38,15 @@ If you want to try the code locally see [Repository setup](#repository-setup) fo
 </p>
 
 <p float="left">
-    <img src="installation-graphics/mobile_results.png" width="500"  title="Visual Results of the MobileNetV2 Backbone Models">
-    <img src="installation-graphics/MobilenetV2_results.png" height="300" title= "Metric evaluation of the MobileNetV2 Backbone Models">
+    <img src="installation-graphics/mobile_results.png" width="400"  title="Visual Results of the MobileNetV2 Backbone Models">
+    <img src="installation-graphics/MobilenetV2_results.png" height="200" title= "Metric evaluation of the MobileNetV2 Backbone Models">
 </p>  
 <p float="left">
     <em> Visual Results of the MobileNetV2 Backbone Models (left) and Metric evaluation of the MobileNetV2 Backbone Models (right)</em>
 </p>
 <p float="left">
-    <img src="installation-graphics/resnet_results.png" height="500" title="Visual Results of the ResNet50 Backbone Models">
-    <img src="installation-graphics/ResNet50_results.png" height="300" title= "Metric evaluation of the ResNet50 Backbone Models">
+    <img src="installation-graphics/resnet_results.png" height="400" title="Visual Results of the ResNet50 Backbone Models">
+    <img src="installation-graphics/ResNet50_results.png" height="200" title= "Metric evaluation of the ResNet50 Backbone Models">
 </p>
 <p float="left">
     <em> Visual Results of the ResNet50 Backbone Models (left) and Metric evaluation of the ResNet50 Backbone Models (right)</em>
