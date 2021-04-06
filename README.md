@@ -10,6 +10,25 @@ If you are a member of the university of osnabrueck and have access to the grid 
 
 If you want to try the code locally see [Repository setup](#repository-setup) for some help.
 
+##### Table of Contents  
+[Installation Guidelines](#installation Guidelines)  
+[Grid Network Setup](#Grid Network Setups)
+[Setting up your scratch folder](#Setting up your scratch folder)
+[Dataset](#Dataset)
+[Preprocessing](#Preprocessing)
+[Starting the training](#Starting the training)
+[On the Grid Network](#On the Grid Network)
+[Parameter adjustment of the sge files](#Parameter adjustment of the sge files)
+[Example Config](#Example Config)
+[Locally](#Locally)
+[Option 1](#Option 1)
+[Option 2](#Option 2)
+[Learning rate range test](#Learning rate range test)
+[Evaluation](#Evaluation)
+[General Remark](#General Remark)
+[References and changes](#References and changes)
+[Pip list](#Pip list)
+
 ## Installation Guidelines
 If you have trouble during the installation progress feel free to contact me.
 Otherwise, look for help at the [Grid Documentation](https://doc.ikw.uni-osnabrueck.de/content/grid-computing)
@@ -328,7 +347,7 @@ placed it into:
 and made changed to `__init__.py` and `lr_finder.py`.
 I modified `lr_finder.py` to fit my custom dataset return values and resetting of the model if a new 4 second clip starts.
 
-# Pip list:
+## Pip list:
 Package and Version            
 
 certifi==2020.4.5.1         
