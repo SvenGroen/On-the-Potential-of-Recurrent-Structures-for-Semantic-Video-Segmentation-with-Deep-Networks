@@ -32,14 +32,19 @@ If you want to try the code locally see [Repository setup](#repository-setup) fo
 # Results
 <p align="center">
     <img src="installation-graphics/DLV3Plus_RU.png" height="400" title="DeeplabV3+ Architecture with additional Recurrent Units">
+    <em>DeeplabV3+ Architecture with additional Recurrent Units</em>
 </p>
 <p float="left">
-    <img src="installation-graphics/mobile_results.png" height="200"  title="Visual Results of the MobileNetV2 Backbone Models">
-    <img src="installation-graphics/MobilenetV2_results.png" height="200" title= "Metric evaluation of the MobileNetV2 Backbone Models">
+    <img src="installation-graphics/mobile_results.png" height="300"  title="Visual Results of the MobileNetV2 Backbone Models">
+    <em> Visual Results of the MobileNetV2 Backbone Model</em>
+    <img src="installation-graphics/MobilenetV2_results.png" height="100" title= "Metric evaluation of the MobileNetV2 Backbone Models">
+    <em> Metric evaluation of the MobileNetV2 Backbone Models</em>
 </p>
 <p float="left">
-    <img src="installation-graphics/resnet_results.png" height="200" title="Visual Results of the ResNet50 Backbone Models">
-    <img src="installation-graphics/ResNet50_results.png" height="200" title= "Metric evaluation of the ResNet50 Backbone Models">
+    <img src="installation-graphics/resnet_results.png" height="300" title="Visual Results of the ResNet50 Backbone Models">
+    <em> Visual Results of the ResNet50 Backbone Models </em>
+    <img src="installation-graphics/ResNet50_results.png" height="100" title= "Metric evaluation of the ResNet50 Backbone Models">
+    <em> Metric evaluation of the ResNet50 Backbone Models</em>
 </p>
 
 
