@@ -13,7 +13,7 @@ If you want to try the code locally see [Repository setup](#repository-setup) fo
 ##### Table of Contents  
 [Installation Guidelines](#installation-Guidelines)  
 [Grid Network Setup](#Grid-Network-Setups)
-[Setting up your scratch folder](#Setting-up your-scratch-folder)
+[Setting up your scratch folder](#Setting-up-your-scratch-folder)
 [Dataset](#Dataset)
 [Preprocessing](#Preprocessing)
 [Starting the training](#Starting-the-training)
@@ -28,6 +28,13 @@ If you want to try the code locally see [Repository setup](#repository-setup) fo
 [General Remark](#General-Remark)
 [References and changes](#References-and-changes)
 [Pip list](#Pip-list)
+
+# Results
+![DeepLabV3+ Architecture with Reccurrent Units](installation-graphics/DLV3Plus_RU.png)
+![MobileNetV2-Backbone results](installation-graphics/mobile_results.png)
+![MobileNetV2-Backbone results](installation-graphics/MobilenetV2_results.png.png)
+![ResNet50-Backbone](installation-graphics/resnet_results.png)
+![ResNet50-Backbone results](installation-graphics/ResNet50_results.png)
 
 ## Installation Guidelines
 If you have trouble during the installation progress feel free to contact me.
