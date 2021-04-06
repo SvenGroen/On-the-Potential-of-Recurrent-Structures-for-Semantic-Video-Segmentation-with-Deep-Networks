@@ -30,11 +30,14 @@ If you want to try the code locally see [Repository setup](#repository-setup) fo
 [Pip list](#Pip-list)   
 
 # Results
-<img src="installation-graphics/DLV3Plus_RU.png" width="100" height="100">
-<img src="installation-graphics/mobile_results.png" width="100" height="100">
-<img src="installation-graphics/MobilenetV2_results.png" width="100" height="100">
-<img src="installation-graphics/resnet_results.png" width="100" height="100">
-<img src="installation-graphics/ResNet50_results.png" width="100" height="100">
+<p float="left">
+    <img src="installation-graphics/DLV3Plus_RU.png" width="150" height="150">
+    <img src="installation-graphics/mobile_results.png" width="150" height="150">
+    <img src="installation-graphics/MobilenetV2_results.png" width="150" height="150">
+    <img src="installation-graphics/resnet_results.png" width="150" height="150">
+    <img src="installation-graphics/ResNet50_results.png" width="150" height="150">
+</p>
+
 
 
 ## Installation Guidelines
