@@ -1,4 +1,5 @@
-# Video_Segmentation
+# On the Potential of Recurrent Structures for Semantic Video Segmentation with Deep Networks
+(Code for the Bachelor's Thesis)
 
 This Github Repositiory can be used to train different versions of the DeepLabV3+ (with additional Recurrent Units).
 
